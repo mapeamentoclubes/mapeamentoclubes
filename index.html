@@ -184,7 +184,7 @@
       <button class="tab-btn admin-tab" data-tab="compsub20" style="display:none;">Competições Sub-20</button>
       <button class="tab-btn admin-tab" data-tab="compsub17" style="display:none;">Competições Sub-17</button>
     </div>
-    <div style="display:flex;gap:8px;align-items:center;">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
       <span class="save-indicator" id="save-indicator">Salvo ✓</span>
       <button class="refresh-btn" id="btn-admin">&#128274; Modo admin</button>
     </div>
@@ -347,17 +347,27 @@ db.ref('competitions').on('value', (snapshot) => {
 
 async function saveBoard(){
   try{ await db.ref('board').set(board); flashSaved(); }
-  catch(e){ /* falha silenciosa; tenta de novo na próxima edição */ }
+  catch(e){ flashError(); }
 }
 async function saveCompetitions(){
   try{ await db.ref('competitions').set(competitions); flashSaved(); }
-  catch(e){ /* falha silenciosa */ }
+  catch(e){ flashError(); }
 }
 function flashSaved(){
   const el = document.getElementById('save-indicator');
+  el.textContent = 'Salvo ✓';
+  el.style.color = 'var(--estavel)';
   el.style.opacity = '1';
   clearTimeout(window._saveTimeout);
   window._saveTimeout = setTimeout(() => { el.style.opacity = '0'; }, 1400);
+}
+function flashError(){
+  const el = document.getElementById('save-indicator');
+  el.textContent = 'Erro ao salvar — confira as regras do Firebase';
+  el.style.color = 'var(--sem)';
+  el.style.opacity = '1';
+  clearTimeout(window._saveTimeout);
+  window._saveTimeout = setTimeout(() => { el.style.opacity = '0'; }, 5000);
 }
 
 /* ================= MODAL ================= */
@@ -640,7 +650,7 @@ db.ref('freeAgents').on('value', (snapshot) => {
 });
 async function saveFreeAgents(){
   try{ await db.ref('freeAgents').set(freeAgents); flashSaved(); }
-  catch(e){ /* falha silenciosa */ }
+  catch(e){ flashError(); }
 }
 
 document.getElementById('btn-add-freeagent').onclick = () => {
@@ -736,49 +746,65 @@ function renderFreeAgents(){
 }
 
 /* ================= LISTA GERAL - TÉCNICOS ================= */
-function renderGeneralList(){
-  const wrap = document.getElementById('general-list');
-  const empty = document.getElementById('empty-listageral');
-  if(!wrap) return;
-
+function renderGeneralGroup(catId, label){
   const rows = [];
   board.forEach(entry => {
-    CATS.forEach(cat => {
-      const catData = entry.categories[cat.id];
-      if(catData.coach && catData.coach.trim()){
-        rows.push({name: catData.coach.trim(), category: cat.label, club: entry.team, status: catData.status});
-      }
-    });
-  });
-  freeAgents.forEach(fa => {
-    rows.push({name: fa.name, category: '—', club: 'Sem clube', status: 'sem'});
+    const catData = entry.categories[catId];
+    if(catData && catData.coach && catData.coach.trim()){
+      rows.push({name: catData.coach.trim(), club: entry.team, status: catData.status});
+    }
   });
   rows.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', {sensitivity:'base'}));
 
-  wrap.innerHTML = '';
-  empty.style.display = rows.length === 0 ? 'block' : 'none';
-  if(rows.length === 0) return;
+  const section = document.createElement('div');
+  section.style.marginBottom = '22px';
+
+  const title = document.createElement('div');
+  title.className = 'display';
+  title.style.cssText = 'font-size:16px;color:var(--light);margin-bottom:10px;';
+  title.textContent = 'Técnicos ' + label;
+  section.appendChild(title);
+
+  if(rows.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'Nenhum técnico cadastrado nessa categoria ainda.';
+    section.appendChild(empty);
+    return section;
+  }
 
   const tableWrap = document.createElement('div');
   tableWrap.className = 'table-wrap';
 
   const head = document.createElement('div');
   head.className = 'table-row head';
-  head.innerHTML = '<div>Nome</div><div>Categoria</div><div>Clube</div><div></div>';
+  head.style.gridTemplateColumns = '1fr 1fr auto';
+  head.innerHTML = '<div>Nome</div><div>Clube</div><div></div>';
   tableWrap.appendChild(head);
 
   rows.forEach(r => {
     const row = document.createElement('div');
     row.className = 'table-row';
+    row.style.gridTemplateColumns = '1fr 1fr auto';
     row.innerHTML =
       '<div class="table-cell"><span class="dot" style="background:' + statusColorVar(r.status) + '"></span>' + escapeHtml(r.name) + '</div>' +
-      '<div class="table-cell muted">' + escapeHtml(r.category) + '</div>' +
       '<div class="table-cell muted">' + escapeHtml(r.club) + '</div>' +
       '<div></div>';
     tableWrap.appendChild(row);
   });
 
-  wrap.appendChild(tableWrap);
+  section.appendChild(tableWrap);
+  return section;
+}
+
+function renderGeneralList(){
+  const wrap = document.getElementById('general-list');
+  const empty = document.getElementById('empty-listageral');
+  if(!wrap) return;
+  wrap.innerHTML = '';
+  empty.style.display = 'none';
+  wrap.appendChild(renderGeneralGroup('sub20', 'Sub-20'));
+  wrap.appendChild(renderGeneralGroup('sub17', 'Sub-17'));
 }
 
 /* ================= COMPETIÇÕES (admin) ================= */
