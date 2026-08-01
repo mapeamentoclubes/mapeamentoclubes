@@ -328,8 +328,10 @@ function competitionsForTeam(catId, teamId){
 }
 
 /* ================= SINCRONIZAÇÃO EM TEMPO REAL ================= */
+let boardDirty = false;
 db.ref('board').on('value', (snapshot) => {
   document.getElementById('loading').style.display = 'none';
+  if(boardDirty) return;
   const fresh = snapshot.val() || [];
   if(isTyping()) return;
   board = fresh;
@@ -337,7 +339,9 @@ db.ref('board').on('value', (snapshot) => {
 });
 
 let suppressCompEcho = false;
+let compDirty = false;
 db.ref('competitions').on('value', (snapshot) => {
+  if(compDirty){ return; } // há mudanças locais ainda não salvas: não sobrescrever
   const val = snapshot.val() || {};
   competitions = { sub20: val.sub20 || [], sub17: val.sub17 || [] };
   if(suppressCompEcho){ suppressCompEcho = false; return; }
@@ -348,17 +352,22 @@ db.ref('competitions').on('value', (snapshot) => {
 });
 
 async function saveBoard(){
+  boardDirty = true;
   try{ await db.ref('board').set(board); flashSaved(); }
   catch(e){ flashError(); }
+  finally{ boardDirty = false; }
 }
 async function saveCompetitions(){
+  compDirty = true;
   try{ suppressCompEcho = true; await db.ref('competitions').set(competitions); flashSaved(); }
   catch(e){ suppressCompEcho = false; flashError(); }
+  finally{ compDirty = false; }
 }
 let compSaveTimeout = null;
 function scheduleSaveCompetitions(){
+  compDirty = true;
   clearTimeout(compSaveTimeout);
-  compSaveTimeout = setTimeout(saveCompetitions, 350);
+  compSaveTimeout = setTimeout(saveCompetitions, 500);
 }
 function flashSaved(){
   const el = document.getElementById('save-indicator');
@@ -476,7 +485,9 @@ function renderTimes(){
   empty.style.display = board.length === 0 ? 'block' : 'none';
   document.getElementById('btn-toggle-all').textContent = (board.length && board.every(e => e.collapsed)) ? 'Expandir todos' : 'Recolher todos';
 
-  board.forEach(entry => {
+  const sortedBoard = [...board].sort((a, b) => a.team.localeCompare(b.team, 'pt-BR', {sensitivity:'base'}));
+
+  sortedBoard.forEach(entry => {
     if(entry.collapsed === undefined) entry.collapsed = false;
     if(entry.notes === undefined) entry.notes = '';
     CATS.forEach(cat => { if(!entry.categories[cat.id]) entry.categories[cat.id] = emptyCat(); });
@@ -649,15 +660,19 @@ document.getElementById('btn-reset').onclick = () => {
 
 /* ================= TÉCNICOS SEM CLUBE ================= */
 let freeAgents = [];
+let freeAgentsDirty = false;
 db.ref('freeAgents').on('value', (snapshot) => {
+  if(freeAgentsDirty) return;
   freeAgents = snapshot.val() || [];
   if(isTyping()) return;
   renderFreeAgents();
   renderGeneralList();
 });
 async function saveFreeAgents(){
+  freeAgentsDirty = true;
   try{ await db.ref('freeAgents').set(freeAgents); flashSaved(); }
   catch(e){ flashError(); }
+  finally{ freeAgentsDirty = false; }
 }
 
 document.getElementById('btn-add-freeagent').onclick = () => {
