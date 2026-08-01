@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Boletim Técnico Sub-20 / Sub-17</title>
+<title>Mapeamento Clubes - Sub20/17</title>
 
 <!-- Firebase (Auth + Realtime Database) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -146,9 +146,11 @@
   /* Indicador de salvo */
   .save-indicator{font-size:12px;color:var(--estavel);opacity:0;transition:opacity .3s;align-self:center;}
 
-  /* Observações por time (admin) */
-  .obs-row{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;}
-  .obs-row-head{font-size:16px;color:var(--ink);margin-bottom:8px;font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;letter-spacing:0.5px;}
+  /* Técnicos sem clube */
+  .freeagent-row{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .freeagent-info{flex:1;min-width:180px;}
+  .freeagent-name{font-size:15px;color:var(--ink);font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;letter-spacing:0.5px;}
+  .freeagent-note{font-size:12px;color:var(--ink-muted);margin-top:3px;}
 
   /* Competições (admin) */
   .comp-box{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;}
@@ -162,15 +164,14 @@
 <body>
 <div class="board">
   <div class="header">
-    <h1 class="display">BOLETIM TÉCNICO — SUB-20 / SUB-17</h1>
-    <p>acompanhamento da comissão técnica, editável quando você quiser</p>
+    <h1 class="display">MAPEAMENTO CLUBES — SUB-20/17</h1>
   </div>
 
   <div class="tabs" style="justify-content:space-between;">
     <div style="display:flex;flex-wrap:wrap;">
       <button class="tab-btn active" data-tab="mapa">Mapa geral</button>
+      <button class="tab-btn" data-tab="semclube">Técnicos sem clube</button>
       <button class="tab-btn admin-tab" data-tab="times" style="display:none;">Times</button>
-      <button class="tab-btn admin-tab" data-tab="obs" style="display:none;">Observações</button>
       <button class="tab-btn admin-tab" data-tab="compsub20" style="display:none;">Competições Sub-20</button>
       <button class="tab-btn admin-tab" data-tab="compsub17" style="display:none;">Competições Sub-17</button>
     </div>
@@ -200,9 +201,14 @@
     <div class="footerbar"><button class="reset-btn" id="btn-reset">Limpar boletim</button></div>
   </div>
 
-  <div class="tab-panel" id="panel-obs">
-    <div class="empty" id="empty-obs" style="display:none;">Cadastre times na aba Times primeiro.</div>
-    <div id="obs-list"></div>
+  <div class="tab-panel" id="panel-semclube">
+    <div class="addbar" id="freeagents-addbar" style="display:none;">
+      <input type="text" id="in-freeagent-name" placeholder="Nome do técnico">
+      <input type="text" id="in-freeagent-note" placeholder="Observação (ex: ex-Palmeiras, saiu em julho/2026)">
+      <button id="btn-add-freeagent">Adicionar</button>
+    </div>
+    <div class="empty" id="empty-freeagents" style="display:none;">Nenhum técnico sem clube cadastrado ainda.</div>
+    <div id="freeagents-list"></div>
   </div>
 
   <div class="tab-panel" id="panel-compsub20">
@@ -388,6 +394,7 @@ function setAdminUI(on){
   isAdmin = on;
   const btn = document.getElementById('btn-admin');
   document.querySelectorAll('.admin-tab').forEach(b => { b.style.display = on ? '' : 'none'; });
+  document.getElementById('freeagents-addbar').style.display = on ? 'flex' : 'none';
   if(on){
     btn.innerHTML = '&#128275; Sair do modo admin';
   }else{
@@ -400,7 +407,7 @@ function setAdminUI(on){
       document.getElementById('panel-mapa').classList.add('active');
     }
   }
-  renderObsTab();
+  renderFreeAgents();
   renderCompTab('sub20');
   renderCompTab('sub17');
 }
@@ -425,7 +432,7 @@ document.getElementById('btn-admin').onclick = () => {
 function renderAll(){
   renderTimes();
   renderMapa();
-  renderObsTab();
+  renderFreeAgents();
 }
 
 function renderTimes(){
@@ -458,7 +465,7 @@ function renderTimes(){
     nameInput.className = 'team-name';
     nameInput.value = entry.team;
     nameInput.oninput = () => { entry.team = nameInput.value; };
-    nameInput.onblur = () => { saveBoard(); renderMapa(); renderObsTab(); };
+    nameInput.onblur = () => { saveBoard(); renderMapa(); };
 
     nameWrap.appendChild(nameInput);
 
@@ -513,6 +520,14 @@ function renderTimes(){
       grid.appendChild(card);
       return;
     }
+
+    const notesArea = document.createElement('textarea');
+    notesArea.placeholder = 'Observação geral do ' + entry.team + ' (aparece no Mapa geral, embaixo do nome)';
+    notesArea.style.marginBottom = '12px';
+    notesArea.value = entry.notes || '';
+    notesArea.oninput = () => { entry.notes = notesArea.value; };
+    notesArea.onblur = () => { saveBoard(); renderMapa(); };
+    card.appendChild(notesArea);
 
     const blocksWrap = document.createElement('div');
     blocksWrap.className = 'cat-blocks-wrap';
@@ -614,27 +629,89 @@ document.getElementById('btn-reset').onclick = () => {
   });
 };
 
-/* ================= OBSERVAÇÕES (por time, admin) ================= */
-function renderObsTab(){
-  const list = document.getElementById('obs-list');
-  const empty = document.getElementById('empty-obs');
+/* ================= TÉCNICOS SEM CLUBE ================= */
+let freeAgents = [];
+db.ref('freeAgents').on('value', (snapshot) => {
+  freeAgents = snapshot.val() || [];
+  if(isTyping()) return;
+  renderFreeAgents();
+});
+async function saveFreeAgents(){
+  try{ await db.ref('freeAgents').set(freeAgents); flashSaved(); }
+  catch(e){ /* falha silenciosa */ }
+}
+
+document.getElementById('btn-add-freeagent').onclick = () => {
+  const nameInput = document.getElementById('in-freeagent-name');
+  const noteInput = document.getElementById('in-freeagent-note');
+  const name = nameInput.value.trim();
+  if(!name) return;
+  freeAgents.push({id: uid(), name: name, note: noteInput.value.trim()});
+  nameInput.value = '';
+  noteInput.value = '';
+  saveFreeAgents();
+  renderFreeAgents();
+};
+document.getElementById('in-freeagent-name').onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('btn-add-freeagent').click(); };
+document.getElementById('in-freeagent-note').onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('btn-add-freeagent').click(); };
+
+function renderFreeAgents(){
+  const list = document.getElementById('freeagents-list');
+  const empty = document.getElementById('empty-freeagents');
   if(!list) return;
   list.innerHTML = '';
-  empty.style.display = board.length === 0 ? 'block' : 'none';
-  board.forEach(entry => {
+  empty.style.display = freeAgents.length === 0 ? 'block' : 'none';
+  freeAgents.forEach(fa => {
     const row = document.createElement('div');
-    row.className = 'obs-row';
-    const head = document.createElement('div');
-    head.className = 'obs-row-head';
-    head.textContent = entry.team;
-    row.appendChild(head);
-    const ta = document.createElement('textarea');
-    ta.placeholder = 'Observação geral sobre o ' + entry.team + ' (aparece no Mapa geral, embaixo do nome)';
-    ta.style.minHeight = '54px';
-    ta.value = entry.notes || '';
-    ta.oninput = () => { entry.notes = ta.value; };
-    ta.onblur = () => { saveBoard(); renderMapa(); };
-    row.appendChild(ta);
+    row.className = 'freeagent-row';
+
+    const info = document.createElement('div');
+    info.className = 'freeagent-info';
+    if(isAdmin){
+      const nameInput = document.createElement('input');
+      nameInput.className = 'coach-input';
+      nameInput.style.marginBottom = '6px';
+      nameInput.value = fa.name;
+      nameInput.oninput = () => { fa.name = nameInput.value; };
+      nameInput.onblur = () => { saveFreeAgents(); };
+      const noteInput = document.createElement('input');
+      noteInput.className = 'coach-input';
+      noteInput.style.marginBottom = '0';
+      noteInput.placeholder = 'Observação';
+      noteInput.value = fa.note || '';
+      noteInput.oninput = () => { fa.note = noteInput.value; };
+      noteInput.onblur = () => { saveFreeAgents(); };
+      info.appendChild(nameInput);
+      info.appendChild(noteInput);
+    }else{
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'freeagent-name';
+      nameDiv.textContent = fa.name;
+      info.appendChild(nameDiv);
+      if(fa.note){
+        const noteDiv = document.createElement('div');
+        noteDiv.className = 'freeagent-note';
+        noteDiv.textContent = fa.note;
+        info.appendChild(noteDiv);
+      }
+    }
+    row.appendChild(info);
+
+    if(isAdmin){
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.title = 'Remover';
+      removeBtn.onclick = () => {
+        confirmModal('Remover ' + fa.name + ' da lista?', () => {
+          freeAgents = freeAgents.filter(x => x.id !== fa.id);
+          saveFreeAgents();
+          renderFreeAgents();
+        });
+      };
+      row.appendChild(removeBtn);
+    }
+
     list.appendChild(row);
   });
 }
@@ -735,7 +812,9 @@ function renderMapa(){
   mapGrid.innerHTML = '';
   emptyMapa.style.display = board.length === 0 ? 'block' : 'none';
 
-  board.forEach(entry => {
+  const sortedBoard = [...board].sort((a, b) => a.team.localeCompare(b.team, 'pt-BR', {sensitivity:'base'}));
+
+  sortedBoard.forEach(entry => {
     const tile = document.createElement('div');
     tile.className = 'map-tile';
 
