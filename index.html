@@ -50,6 +50,7 @@
     background:none;border:none;color:var(--ink-muted);
     padding:9px 16px;font-size:13.5px;cursor:pointer;
     border-bottom:2px solid transparent;margin-bottom:-1px;
+    white-space:nowrap;
   }
   .tab-btn.active{color:var(--light);border-bottom-color:var(--light);}
   .refresh-btn{background:none;border:1px solid var(--line);color:var(--ink-muted);padding:6px 12px;border-radius:4px;font-size:12.5px;cursor:pointer;align-self:center;height:fit-content;}
@@ -97,11 +98,9 @@
   .cat-label{font-size:11px;letter-spacing:1px;color:var(--ink-muted);margin-bottom:6px;text-transform:uppercase;}
   .coach-input{width:100%;background:var(--surf3);border:1px solid var(--line);color:var(--ink);padding:7px 9px;border-radius:4px;font-size:13px;margin-bottom:8px;}
   .coach-input::placeholder{color:var(--ink-muted);}
-  .tourn-input{width:100%;background:var(--surf3);border:1px solid var(--line);color:var(--ink);padding:6px 9px;border-radius:4px;font-size:12px;margin-bottom:8px;}
-  .tourn-input::placeholder{color:var(--ink-muted);}
 
-  .status-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
-  .status-btn{flex:1;min-width:56px;font-size:10.5px;padding:6px 4px;border-radius:3px;border:1px solid var(--line);background:var(--surf2);color:var(--ink-muted);cursor:pointer;text-align:center;}
+  .status-row{display:flex;gap:5px;margin-bottom:0;flex-wrap:wrap;}
+  .status-btn{flex:1;min-width:56px;font-size:10.5px;padding:6px 4px;border-radius:3px;border:1px solid var(--line);background:var(--surf3);color:var(--ink-muted);cursor:pointer;text-align:center;}
   .status-btn.active.st-estavel{background:var(--estavel-bg);color:var(--estavel);border-color:var(--estavel);}
   .status-btn.active.st-alerta{background:var(--alerta-bg);color:var(--alerta);border-color:var(--alerta);}
   .status-btn.active.st-sem{background:var(--sem-bg);color:var(--sem);border-color:var(--sem);}
@@ -109,7 +108,7 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(196,82,58,0.5);}50%{box-shadow:0 0 0 4px rgba(196,82,58,0);}}
 
   textarea{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);font-size:12px;padding:7px;border-radius:4px;resize:vertical;min-height:38px;font-family:inherit;}
-  .meta{font-size:10px;color:var(--ink-muted);margin-top:5px;}
+  .meta{font-size:10px;color:var(--ink-muted);margin-top:6px;}
 
   .footerbar{margin-top:24px;display:flex;justify-content:flex-end;}
   .reset-btn{background:none;border:1px solid var(--line);color:var(--ink-muted);padding:6px 12px;border-radius:4px;font-size:11.5px;cursor:pointer;}
@@ -117,12 +116,13 @@
   .loading{color:var(--ink-muted);font-size:13px;padding:20px 0;}
 
   /* Mapa geral */
-  .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
   .map-tile{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;gap:10px;align-items:flex-start;}
   .emblem{width:38px;height:38px;border-radius:50%;background:var(--surf3);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--light);flex-shrink:0;overflow:hidden;}
   .emblem img{width:100%;height:100%;object-fit:cover;}
   .map-info{flex:1;min-width:0;}
-  .map-team{font-size:14.5px;margin-bottom:5px;color:var(--ink);}
+  .map-team{font-size:14.5px;margin-bottom:4px;color:var(--ink);}
+  .map-note{font-size:11px;color:var(--ink-muted);font-style:italic;margin-bottom:7px;line-height:1.4;}
   .map-row{font-size:11.5px;color:var(--ink-muted);display:flex;align-items:flex-start;gap:5px;margin-bottom:5px;}
   .map-row b{color:var(--ink);font-weight:500;}
   .map-tourn{font-size:10.5px;color:var(--ink-muted);font-style:italic;display:block;margin-top:1px;}
@@ -138,19 +138,25 @@
   .modal-btn-secondary{background:none;border:1px solid var(--line);color:var(--ink-muted);padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;}
 
   /* Legenda */
-  .legend{display:flex;gap:18px;flex-wrap:wrap;background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-bottom:20px;}
-  .legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-muted);}
-  .legend-item b{color:var(--ink);font-weight:600;}
+  .legend{display:flex;gap:22px;flex-wrap:wrap;background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:20px;}
+  .legend-item{display:flex;gap:8px;font-size:12px;color:var(--ink-muted);max-width:280px;}
+  .legend-item .dot{margin-top:4px;}
+  .legend-item b{color:var(--ink);font-weight:600;display:block;}
 
   /* Indicador de salvo */
   .save-indicator{font-size:12px;color:var(--estavel);opacity:0;transition:opacity .3s;align-self:center;}
 
-  /* Observações */
-  .obs-box{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:16px;}
-  .obs-view{font-size:14px;line-height:1.6;white-space:pre-wrap;color:var(--ink);}
-  .obs-view.empty-text{color:var(--ink-muted);font-style:italic;}
-  .obs-edit{width:100%;min-height:160px;background:var(--surf2);border:1px solid var(--line);color:var(--ink);font-size:14px;line-height:1.6;padding:12px;border-radius:4px;resize:vertical;font-family:inherit;}
-  .obs-hint{font-size:11px;color:var(--ink-muted);margin-top:6px;}
+  /* Observações por time (admin) */
+  .obs-row{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;}
+  .obs-row-head{font-size:16px;color:var(--ink);margin-bottom:8px;font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;letter-spacing:0.5px;}
+
+  /* Competições (admin) */
+  .comp-box{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;}
+  .comp-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .comp-name-input{flex:1;background:var(--surf2);border:1px solid var(--line);color:var(--ink);font-size:15px;padding:7px 9px;border-radius:4px;font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;letter-spacing:0.5px;}
+  .comp-teams{display:flex;flex-wrap:wrap;gap:10px 16px;padding-top:8px;border-top:1px solid var(--line);}
+  .comp-team-check{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-muted);cursor:pointer;}
+  .comp-team-check input{cursor:pointer;}
 </style>
 </head>
 <body>
@@ -161,10 +167,12 @@
   </div>
 
   <div class="tabs" style="justify-content:space-between;">
-    <div style="display:flex;">
+    <div style="display:flex;flex-wrap:wrap;">
       <button class="tab-btn active" data-tab="mapa">Mapa geral</button>
-      <button class="tab-btn" data-tab="obs">Observações</button>
-      <button class="tab-btn" data-tab="times" id="tab-times-btn" style="display:none;">Times</button>
+      <button class="tab-btn admin-tab" data-tab="times" style="display:none;">Times</button>
+      <button class="tab-btn admin-tab" data-tab="obs" style="display:none;">Observações</button>
+      <button class="tab-btn admin-tab" data-tab="compsub20" style="display:none;">Competições Sub-20</button>
+      <button class="tab-btn admin-tab" data-tab="compsub17" style="display:none;">Competições Sub-17</button>
     </div>
     <div style="display:flex;gap:8px;align-items:center;">
       <span class="save-indicator" id="save-indicator">Salvo ✓</span>
@@ -173,9 +181,9 @@
   </div>
 
   <div class="legend">
-    <div class="legend-item"><span class="dot" style="background:var(--estavel);"></span><b>Estável</b> — técnico no cargo, sem sinais de instabilidade</div>
-    <div class="legend-item"><span class="dot" style="background:var(--alerta);"></span><b>Alerta</b> — situação em observação (cobrança, resultados ruins, rumores)</div>
-    <div class="legend-item"><span class="dot" style="background:var(--sem);"></span><b>Sem técnico</b> — cargo vago ou risco iminente de saída</div>
+    <div class="legend-item"><span class="dot" style="background:var(--estavel);"></span><span><b>Estável</b>técnico com bons resultados e/ou recente no cargo</span></div>
+    <div class="legend-item"><span class="dot" style="background:var(--alerta);"></span><span><b>Alerta</b>resultados ruins e/ou clube com processo possível de mudança</span></div>
+    <div class="legend-item"><span class="dot" style="background:var(--sem);"></span><span><b>Sem técnico</b>cargo vago</span></div>
   </div>
 
   <div id="loading" class="loading">Carregando boletim...</div>
@@ -193,11 +201,24 @@
   </div>
 
   <div class="tab-panel" id="panel-obs">
-    <div class="obs-box">
-      <div class="obs-view" id="obs-view"></div>
-      <textarea class="obs-edit" id="obs-edit" style="display:none;" placeholder="Escreva aqui observações gerais visíveis para todos (ex: contexto da temporada, avisos, prazos)..."></textarea>
-      <div class="obs-hint" id="obs-hint" style="display:none;">Só você (admin) edita este texto. Ele fica visível pra todo mundo que acessar o site.</div>
+    <div class="empty" id="empty-obs" style="display:none;">Cadastre times na aba Times primeiro.</div>
+    <div id="obs-list"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-compsub20">
+    <div class="addbar">
+      <input type="text" id="in-comp-sub20" placeholder="Nome da competição (ex: Copa SP)">
+      <button id="btn-add-comp-sub20">Criar competição</button>
     </div>
+    <div id="comp-list-sub20"></div>
+  </div>
+
+  <div class="tab-panel" id="panel-compsub17">
+    <div class="addbar">
+      <input type="text" id="in-comp-sub17" placeholder="Nome da competição">
+      <button id="btn-add-comp-sub17">Criar competição</button>
+    </div>
+    <div id="comp-list-sub17"></div>
   </div>
 
   <div class="tab-panel active" id="panel-mapa">
@@ -240,18 +261,11 @@ const CATS = [
   {id:'executivo', label:'Executivo de base', tournament:false}
 ];
 let board = [];
-let globalNotes = '';
-
-function flashSaved(){
-  const el = document.getElementById('save-indicator');
-  el.style.opacity = '1';
-  clearTimeout(window._saveTimeout);
-  window._saveTimeout = setTimeout(() => { el.style.opacity = '0'; }, 1400);
-}
+let competitions = { sub20: [], sub17: [] };
 
 function todayStr(){ return new Date().toLocaleDateString('pt-BR'); }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function emptyCat(){ return {coach:'', status:'sem', notes:'', tournament:'', lastUpdate:todayStr()}; }
+function emptyCat(){ return {coach:'', status:'sem', lastUpdate:todayStr()}; }
 function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str||''; return d.innerHTML; }
 function initials(name){
   return (name||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '?';
@@ -288,49 +302,43 @@ function isTyping(){
   const el = document.activeElement;
   return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
 }
+function competitionsForTeam(catId, teamId){
+  const comps = (competitions[catId] || []).filter(c => (c.teamIds||[]).includes(teamId));
+  return comps.map(c => c.name).join(', ');
+}
 
 /* ================= SINCRONIZAÇÃO EM TEMPO REAL ================= */
 db.ref('board').on('value', (snapshot) => {
   document.getElementById('loading').style.display = 'none';
   const fresh = snapshot.val() || [];
-  if(isTyping()) return; // não atropela quem está digitando; próxima mudança de campo já sincroniza
+  if(isTyping()) return;
   board = fresh;
   renderAll();
+});
+
+db.ref('competitions').on('value', (snapshot) => {
+  const val = snapshot.val() || {};
+  competitions = { sub20: val.sub20 || [], sub17: val.sub17 || [] };
+  if(isTyping()) return;
+  renderCompTab('sub20');
+  renderCompTab('sub17');
+  renderMapa();
 });
 
 async function saveBoard(){
   try{ await db.ref('board').set(board); flashSaved(); }
   catch(e){ /* falha silenciosa; tenta de novo na próxima edição */ }
 }
-
-/* ================= OBSERVAÇÕES GERAIS ================= */
-db.ref('globalNotes').on('value', (snapshot) => {
-  globalNotes = snapshot.val() || '';
-  renderObs();
-});
-
-function renderObs(){
-  const view = document.getElementById('obs-view');
-  const edit = document.getElementById('obs-edit');
-  const hint = document.getElementById('obs-hint');
-  if(isAdmin){
-    view.style.display = 'none';
-    edit.style.display = 'block';
-    hint.style.display = 'block';
-    if(document.activeElement !== edit){ edit.value = globalNotes; }
-  }else{
-    view.style.display = 'block';
-    edit.style.display = 'none';
-    hint.style.display = 'none';
-    view.textContent = globalNotes || 'Nenhuma observação registrada ainda.';
-    view.classList.toggle('empty-text', !globalNotes);
-  }
+async function saveCompetitions(){
+  try{ await db.ref('competitions').set(competitions); flashSaved(); }
+  catch(e){ /* falha silenciosa */ }
 }
-
-document.getElementById('obs-edit').onblur = async () => {
-  const val = document.getElementById('obs-edit').value;
-  try{ await db.ref('globalNotes').set(val); flashSaved(); }catch(e){}
-};
+function flashSaved(){
+  const el = document.getElementById('save-indicator');
+  el.style.opacity = '1';
+  clearTimeout(window._saveTimeout);
+  window._saveTimeout = setTimeout(() => { el.style.opacity = '0'; }, 1400);
+}
 
 /* ================= MODAL ================= */
 function openModal(html){
@@ -377,21 +385,24 @@ function passwordModal(){
 
 /* ================= LOGIN / ADMIN ================= */
 function setAdminUI(on){
-  const btn = document.getElementById('btn-admin');
-  const timesBtn = document.getElementById('tab-times-btn');
   isAdmin = on;
+  const btn = document.getElementById('btn-admin');
+  document.querySelectorAll('.admin-tab').forEach(b => { b.style.display = on ? '' : 'none'; });
   if(on){
     btn.innerHTML = '&#128275; Sair do modo admin';
-    timesBtn.style.display = '';
   }else{
     btn.innerHTML = '&#128274; Modo admin';
-    timesBtn.style.display = 'none';
-    timesBtn.classList.remove('active');
-    document.getElementById('panel-times').classList.remove('active');
-    document.querySelector('.tab-btn[data-tab="mapa"]').classList.add('active');
-    document.getElementById('panel-mapa').classList.add('active');
+    const activeBtn = document.querySelector('.tab-btn.active');
+    if(activeBtn && activeBtn.classList.contains('admin-tab')){
+      document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      document.querySelector('.tab-btn[data-tab="mapa"]').classList.add('active');
+      document.getElementById('panel-mapa').classList.add('active');
+    }
   }
-  renderObs();
+  renderObsTab();
+  renderCompTab('sub20');
+  renderCompTab('sub17');
 }
 
 auth.onAuthStateChanged((user) => {
@@ -414,6 +425,7 @@ document.getElementById('btn-admin').onclick = () => {
 function renderAll(){
   renderTimes();
   renderMapa();
+  renderObsTab();
 }
 
 function renderTimes(){
@@ -425,6 +437,7 @@ function renderTimes(){
 
   board.forEach(entry => {
     if(entry.collapsed === undefined) entry.collapsed = false;
+    if(entry.notes === undefined) entry.notes = '';
     CATS.forEach(cat => { if(!entry.categories[cat.id]) entry.categories[cat.id] = emptyCat(); });
 
     const card = document.createElement('div');
@@ -445,7 +458,7 @@ function renderTimes(){
     nameInput.className = 'team-name';
     nameInput.value = entry.team;
     nameInput.oninput = () => { entry.team = nameInput.value; };
-    nameInput.onblur = () => { saveBoard(); renderMapa(); };
+    nameInput.onblur = () => { saveBoard(); renderMapa(); renderObsTab(); };
 
     nameWrap.appendChild(nameInput);
 
@@ -522,16 +535,6 @@ function renderTimes(){
       coachInput.onblur = () => { saveBoard(); renderMapa(); };
       block.appendChild(coachInput);
 
-      if(cat.tournament){
-        const tournInput = document.createElement('input');
-        tournInput.className = 'tourn-input';
-        tournInput.placeholder = 'Torneio(s) atual (ex: Copa SP, Brasileirão Sub-20)';
-        tournInput.value = catData.tournament || '';
-        tournInput.oninput = () => { catData.tournament = tournInput.value; };
-        tournInput.onblur = () => { saveBoard(); renderMapa(); };
-        block.appendChild(tournInput);
-      }
-
       const statusRow = document.createElement('div');
       statusRow.className = 'status-row';
       STATUS.forEach(s => {
@@ -547,13 +550,6 @@ function renderTimes(){
         statusRow.appendChild(btn);
       });
       block.appendChild(statusRow);
-
-      const notes = document.createElement('textarea');
-      notes.placeholder = 'Observações (' + cat.label + ')';
-      notes.value = catData.notes || '';
-      notes.oninput = () => { catData.notes = notes.value; };
-      notes.onblur = () => { saveBoard(); };
-      block.appendChild(notes);
 
       const meta = document.createElement('div');
       meta.className = 'meta';
@@ -592,6 +588,7 @@ document.getElementById('btn-add').onclick = () => {
     id: uid(),
     team: team,
     crest: '',
+    notes: '',
     collapsed: false,
     categories: { sub20: emptyCat(), sub17: emptyCat(), executivo: emptyCat() }
   });
@@ -617,6 +614,120 @@ document.getElementById('btn-reset').onclick = () => {
   });
 };
 
+/* ================= OBSERVAÇÕES (por time, admin) ================= */
+function renderObsTab(){
+  const list = document.getElementById('obs-list');
+  const empty = document.getElementById('empty-obs');
+  if(!list) return;
+  list.innerHTML = '';
+  empty.style.display = board.length === 0 ? 'block' : 'none';
+  board.forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'obs-row';
+    const head = document.createElement('div');
+    head.className = 'obs-row-head';
+    head.textContent = entry.team;
+    row.appendChild(head);
+    const ta = document.createElement('textarea');
+    ta.placeholder = 'Observação geral sobre o ' + entry.team + ' (aparece no Mapa geral, embaixo do nome)';
+    ta.style.minHeight = '54px';
+    ta.value = entry.notes || '';
+    ta.oninput = () => { entry.notes = ta.value; };
+    ta.onblur = () => { saveBoard(); renderMapa(); };
+    row.appendChild(ta);
+    list.appendChild(row);
+  });
+}
+
+/* ================= COMPETIÇÕES (admin) ================= */
+function addCompetition(catId){
+  const input = document.getElementById('in-comp-' + catId);
+  const name = input.value.trim();
+  if(!name) return;
+  if(!competitions[catId]) competitions[catId] = [];
+  competitions[catId].push({id: uid(), name: name, teamIds: []});
+  input.value = '';
+  saveCompetitions();
+  renderCompTab(catId);
+}
+document.getElementById('btn-add-comp-sub20').onclick = () => addCompetition('sub20');
+document.getElementById('btn-add-comp-sub17').onclick = () => addCompetition('sub17');
+document.getElementById('in-comp-sub20').onkeydown = (e) => { if(e.key === 'Enter') addCompetition('sub20'); };
+document.getElementById('in-comp-sub17').onkeydown = (e) => { if(e.key === 'Enter') addCompetition('sub17'); };
+
+function renderCompTab(catId){
+  const listEl = document.getElementById('comp-list-' + catId);
+  if(!listEl) return;
+  listEl.innerHTML = '';
+  const comps = competitions[catId] || [];
+  if(comps.length === 0){
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = 'Nenhuma competição cadastrada ainda.';
+    listEl.appendChild(empty);
+    return;
+  }
+  comps.forEach(comp => {
+    const box = document.createElement('div');
+    box.className = 'comp-box';
+
+    const head = document.createElement('div');
+    head.className = 'comp-head';
+    const nameInput = document.createElement('input');
+    nameInput.className = 'comp-name-input';
+    nameInput.value = comp.name;
+    nameInput.oninput = () => { comp.name = nameInput.value; };
+    nameInput.onblur = () => { saveCompetitions(); };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'remove';
+    delBtn.innerHTML = '&times;';
+    delBtn.title = 'Remover competição';
+    delBtn.onclick = () => {
+      confirmModal('Remover a competição "' + comp.name + '"?', () => {
+        competitions[catId] = competitions[catId].filter(c => c.id !== comp.id);
+        saveCompetitions();
+        renderCompTab(catId);
+      });
+    };
+    head.appendChild(nameInput);
+    head.appendChild(delBtn);
+    box.appendChild(head);
+
+    const teamsWrap = document.createElement('div');
+    teamsWrap.className = 'comp-teams';
+    if(board.length === 0){
+      const none = document.createElement('div');
+      none.style.cssText = 'font-size:12px;color:var(--ink-muted);';
+      none.textContent = 'Cadastre times na aba Times primeiro.';
+      teamsWrap.appendChild(none);
+    }
+    board.forEach(entry => {
+      const label = document.createElement('label');
+      label.className = 'comp-team-check';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = (comp.teamIds || []).includes(entry.id);
+      checkbox.onchange = () => {
+        if(!comp.teamIds) comp.teamIds = [];
+        if(checkbox.checked){
+          if(!comp.teamIds.includes(entry.id)) comp.teamIds.push(entry.id);
+        }else{
+          comp.teamIds = comp.teamIds.filter(id => id !== entry.id);
+        }
+        saveCompetitions();
+        renderMapa();
+      };
+      label.appendChild(checkbox);
+      const span = document.createElement('span');
+      span.textContent = entry.team;
+      label.appendChild(span);
+      teamsWrap.appendChild(label);
+    });
+    box.appendChild(teamsWrap);
+    listEl.appendChild(box);
+  });
+}
+
 /* ================= MAPA GERAL TAB ================= */
 function renderMapa(){
   const mapGrid = document.getElementById('map-grid');
@@ -640,13 +751,23 @@ function renderMapa(){
     teamName.textContent = entry.team;
     info.appendChild(teamName);
 
+    if(entry.notes){
+      const noteDiv = document.createElement('div');
+      noteDiv.className = 'map-note';
+      noteDiv.textContent = entry.notes;
+      info.appendChild(noteDiv);
+    }
+
     CATS.forEach(cat => {
       const catData = entry.categories[cat.id];
       const row = document.createElement('div');
       row.className = 'map-row';
       let html = '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span><span><b>' + cat.label + ':</b> ' + escapeHtml(catData.coach || 'sem técnico');
-      if(catData.tournament){
-        html += '<span class="map-tourn">' + escapeHtml(catData.tournament) + '</span>';
+      if(cat.tournament){
+        const tournamentText = competitionsForTeam(cat.id, entry.id);
+        if(tournamentText){
+          html += '<span class="map-tourn">' + escapeHtml(tournamentText) + '</span>';
+        }
       }
       html += '</span>';
       row.innerHTML = html;
