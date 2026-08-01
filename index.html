@@ -146,11 +146,19 @@
   /* Indicador de salvo */
   .save-indicator{font-size:12px;color:var(--estavel);opacity:0;transition:opacity .3s;align-self:center;}
 
-  /* Técnicos sem clube */
-  .freeagent-row{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
-  .freeagent-info{flex:1;min-width:180px;}
-  .freeagent-name{font-size:15px;color:var(--ink);font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;letter-spacing:0.5px;}
-  .freeagent-note{font-size:12px;color:var(--ink-muted);margin-top:3px;}
+  /* Tabelas (Lista Geral / Técnicos sem clube) */
+  .table-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);}
+  .table-row.head{color:var(--ink-muted);font-size:11px;letter-spacing:0.5px;text-transform:uppercase;border-bottom:1px solid var(--line);}
+  .table-row:last-child{border-bottom:none;}
+  .table-wrap{background:var(--surf1);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .table-cell{font-size:13px;color:var(--ink);display:flex;align-items:center;gap:6px;min-width:0;}
+  .table-cell.muted{color:var(--ink-muted);}
+  .table-cell input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:6px 8px;border-radius:4px;font-size:12.5px;}
+  .fa-table{background:var(--surf1);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .fa-row{display:grid;grid-template-columns:1fr 1fr 140px auto;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);}
+  .fa-row.head{color:var(--ink-muted);font-size:11px;letter-spacing:0.5px;text-transform:uppercase;}
+  .fa-row:last-child{border-bottom:none;}
+  .fa-row input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:6px 8px;border-radius:4px;font-size:12.5px;}
 
   /* Competições (admin) */
   .comp-box{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;}
@@ -170,6 +178,7 @@
   <div class="tabs" style="justify-content:space-between;">
     <div style="display:flex;flex-wrap:wrap;">
       <button class="tab-btn active" data-tab="mapa">Mapa geral</button>
+      <button class="tab-btn" data-tab="listageral">Lista Geral - Técnicos</button>
       <button class="tab-btn" data-tab="semclube">Técnicos sem clube</button>
       <button class="tab-btn admin-tab" data-tab="times" style="display:none;">Times</button>
       <button class="tab-btn admin-tab" data-tab="compsub20" style="display:none;">Competições Sub-20</button>
@@ -190,7 +199,6 @@
   <div id="loading" class="loading">Carregando boletim...</div>
 
   <div class="tab-panel" id="panel-times">
-    <div class="summary" id="summary"></div>
     <div class="addbar">
       <input type="text" id="in-team" placeholder="Nome do time">
       <button id="btn-add">Adicionar time</button>
@@ -201,14 +209,20 @@
     <div class="footerbar"><button class="reset-btn" id="btn-reset">Limpar boletim</button></div>
   </div>
 
+  <div class="tab-panel" id="panel-listageral">
+    <div class="empty" id="empty-listageral" style="display:none;">Nenhum técnico cadastrado ainda.</div>
+    <div id="general-list"></div>
+  </div>
+
   <div class="tab-panel" id="panel-semclube">
     <div class="addbar" id="freeagents-addbar" style="display:none;">
       <input type="text" id="in-freeagent-name" placeholder="Nome do técnico">
-      <input type="text" id="in-freeagent-note" placeholder="Observação (ex: ex-Palmeiras, saiu em julho/2026)">
+      <input type="text" id="in-freeagent-exclub" placeholder="Ex-clube">
+      <input type="text" id="in-freeagent-exitdate" placeholder="Data de saída (ex: jul/2026)">
       <button id="btn-add-freeagent">Adicionar</button>
     </div>
     <div class="empty" id="empty-freeagents" style="display:none;">Nenhum técnico sem clube cadastrado ainda.</div>
-    <div id="freeagents-list"></div>
+    <div class="fa-table" id="freeagents-list"></div>
   </div>
 
   <div class="tab-panel" id="panel-compsub20">
@@ -264,7 +278,7 @@ const STATUS = [
 const CATS = [
   {id:'sub20', label:'Sub-20', tournament:true},
   {id:'sub17', label:'Sub-17', tournament:true},
-  {id:'executivo', label:'Executivo de base', tournament:false}
+  {id:'executivo', label:'Comando da base', tournament:false}
 ];
 let board = [];
 let competitions = { sub20: [], sub17: [] };
@@ -433,6 +447,9 @@ function renderAll(){
   renderTimes();
   renderMapa();
   renderFreeAgents();
+  renderCompTab('sub20');
+  renderCompTab('sub17');
+  renderGeneralList();
 }
 
 function renderTimes(){
@@ -544,7 +561,7 @@ function renderTimes(){
 
       const coachInput = document.createElement('input');
       coachInput.className = 'coach-input';
-      coachInput.placeholder = cat.id === 'executivo' ? 'Nome do executivo de base' : ('Nome do técnico ' + cat.label);
+      coachInput.placeholder = cat.id === 'executivo' ? 'Nome do responsável pelo comando da base' : ('Nome do técnico ' + cat.label);
       coachInput.value = catData.coach;
       coachInput.oninput = () => { catData.coach = coachInput.value; };
       coachInput.onblur = () => { saveBoard(); renderMapa(); };
@@ -576,22 +593,6 @@ function renderTimes(){
 
     card.appendChild(blocksWrap);
     grid.appendChild(card);
-  });
-
-  renderSummary();
-}
-
-function renderSummary(){
-  const summary = document.getElementById('summary');
-  summary.innerHTML = '';
-  CATS.forEach(cat => {
-    STATUS.forEach(s => {
-      const count = board.filter(e => e.categories[cat.id].status === s.id).length;
-      const chip = document.createElement('div');
-      chip.className = 'chip';
-      chip.innerHTML = '<span class="dot" style="background:' + statusColorVar(s.id) + '"></span>' + cat.label + ' ' + s.label + ': <b>' + count + '</b>';
-      summary.appendChild(chip);
-    });
   });
 }
 
@@ -635,6 +636,7 @@ db.ref('freeAgents').on('value', (snapshot) => {
   freeAgents = snapshot.val() || [];
   if(isTyping()) return;
   renderFreeAgents();
+  renderGeneralList();
 });
 async function saveFreeAgents(){
   try{ await db.ref('freeAgents').set(freeAgents); flashSaved(); }
@@ -643,17 +645,21 @@ async function saveFreeAgents(){
 
 document.getElementById('btn-add-freeagent').onclick = () => {
   const nameInput = document.getElementById('in-freeagent-name');
-  const noteInput = document.getElementById('in-freeagent-note');
+  const exClubInput = document.getElementById('in-freeagent-exclub');
+  const exitDateInput = document.getElementById('in-freeagent-exitdate');
   const name = nameInput.value.trim();
   if(!name) return;
-  freeAgents.push({id: uid(), name: name, note: noteInput.value.trim()});
+  freeAgents.push({id: uid(), name: name, exClub: exClubInput.value.trim(), exitDate: exitDateInput.value.trim()});
   nameInput.value = '';
-  noteInput.value = '';
+  exClubInput.value = '';
+  exitDateInput.value = '';
   saveFreeAgents();
   renderFreeAgents();
+  renderGeneralList();
 };
-document.getElementById('in-freeagent-name').onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('btn-add-freeagent').click(); };
-document.getElementById('in-freeagent-note').onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('btn-add-freeagent').click(); };
+['in-freeagent-name','in-freeagent-exclub','in-freeagent-exitdate'].forEach(id => {
+  document.getElementById(id).onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('btn-add-freeagent').click(); };
+});
 
 function renderFreeAgents(){
   const list = document.getElementById('freeagents-list');
@@ -661,41 +667,51 @@ function renderFreeAgents(){
   if(!list) return;
   list.innerHTML = '';
   empty.style.display = freeAgents.length === 0 ? 'block' : 'none';
+  if(freeAgents.length === 0) return;
+
+  const head = document.createElement('div');
+  head.className = 'fa-row head';
+  head.innerHTML = '<div>Nome</div><div>Ex-clube</div><div>Data de saída</div><div></div>';
+  list.appendChild(head);
+
   freeAgents.forEach(fa => {
     const row = document.createElement('div');
-    row.className = 'freeagent-row';
+    row.className = 'fa-row';
 
-    const info = document.createElement('div');
-    info.className = 'freeagent-info';
     if(isAdmin){
       const nameInput = document.createElement('input');
-      nameInput.className = 'coach-input';
-      nameInput.style.marginBottom = '6px';
       nameInput.value = fa.name;
       nameInput.oninput = () => { fa.name = nameInput.value; };
-      nameInput.onblur = () => { saveFreeAgents(); };
-      const noteInput = document.createElement('input');
-      noteInput.className = 'coach-input';
-      noteInput.style.marginBottom = '0';
-      noteInput.placeholder = 'Observação';
-      noteInput.value = fa.note || '';
-      noteInput.oninput = () => { fa.note = noteInput.value; };
-      noteInput.onblur = () => { saveFreeAgents(); };
-      info.appendChild(nameInput);
-      info.appendChild(noteInput);
+      nameInput.onblur = () => { saveFreeAgents(); renderGeneralList(); };
+
+      const exClubInput = document.createElement('input');
+      exClubInput.value = fa.exClub || '';
+      exClubInput.placeholder = 'Ex-clube';
+      exClubInput.oninput = () => { fa.exClub = exClubInput.value; };
+      exClubInput.onblur = () => { saveFreeAgents(); };
+
+      const exitDateInput = document.createElement('input');
+      exitDateInput.value = fa.exitDate || '';
+      exitDateInput.placeholder = 'jul/2026';
+      exitDateInput.oninput = () => { fa.exitDate = exitDateInput.value; };
+      exitDateInput.onblur = () => { saveFreeAgents(); };
+
+      row.appendChild(nameInput);
+      row.appendChild(exClubInput);
+      row.appendChild(exitDateInput);
     }else{
-      const nameDiv = document.createElement('div');
-      nameDiv.className = 'freeagent-name';
-      nameDiv.textContent = fa.name;
-      info.appendChild(nameDiv);
-      if(fa.note){
-        const noteDiv = document.createElement('div');
-        noteDiv.className = 'freeagent-note';
-        noteDiv.textContent = fa.note;
-        info.appendChild(noteDiv);
-      }
+      const nameCell = document.createElement('div');
+      nameCell.textContent = fa.name;
+      const exClubCell = document.createElement('div');
+      exClubCell.textContent = fa.exClub || '—';
+      exClubCell.style.color = 'var(--ink-muted)';
+      const exitDateCell = document.createElement('div');
+      exitDateCell.textContent = fa.exitDate || '—';
+      exitDateCell.style.color = 'var(--ink-muted)';
+      row.appendChild(nameCell);
+      row.appendChild(exClubCell);
+      row.appendChild(exitDateCell);
     }
-    row.appendChild(info);
 
     if(isAdmin){
       const removeBtn = document.createElement('button');
@@ -707,13 +723,62 @@ function renderFreeAgents(){
           freeAgents = freeAgents.filter(x => x.id !== fa.id);
           saveFreeAgents();
           renderFreeAgents();
+          renderGeneralList();
         });
       };
       row.appendChild(removeBtn);
+    }else{
+      row.appendChild(document.createElement('div'));
     }
 
     list.appendChild(row);
   });
+}
+
+/* ================= LISTA GERAL - TÉCNICOS ================= */
+function renderGeneralList(){
+  const wrap = document.getElementById('general-list');
+  const empty = document.getElementById('empty-listageral');
+  if(!wrap) return;
+
+  const rows = [];
+  board.forEach(entry => {
+    CATS.forEach(cat => {
+      const catData = entry.categories[cat.id];
+      if(catData.coach && catData.coach.trim()){
+        rows.push({name: catData.coach.trim(), category: cat.label, club: entry.team, status: catData.status});
+      }
+    });
+  });
+  freeAgents.forEach(fa => {
+    rows.push({name: fa.name, category: '—', club: 'Sem clube', status: 'sem'});
+  });
+  rows.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR', {sensitivity:'base'}));
+
+  wrap.innerHTML = '';
+  empty.style.display = rows.length === 0 ? 'block' : 'none';
+  if(rows.length === 0) return;
+
+  const tableWrap = document.createElement('div');
+  tableWrap.className = 'table-wrap';
+
+  const head = document.createElement('div');
+  head.className = 'table-row head';
+  head.innerHTML = '<div>Nome</div><div>Categoria</div><div>Clube</div><div></div>';
+  tableWrap.appendChild(head);
+
+  rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'table-row';
+    row.innerHTML =
+      '<div class="table-cell"><span class="dot" style="background:' + statusColorVar(r.status) + '"></span>' + escapeHtml(r.name) + '</div>' +
+      '<div class="table-cell muted">' + escapeHtml(r.category) + '</div>' +
+      '<div class="table-cell muted">' + escapeHtml(r.club) + '</div>' +
+      '<div></div>';
+    tableWrap.appendChild(row);
+  });
+
+  wrap.appendChild(tableWrap);
 }
 
 /* ================= COMPETIÇÕES (admin) ================= */
