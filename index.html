@@ -92,12 +92,12 @@
   .crest-input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:6px 9px;border-radius:4px;font-size:11.5px;margin-top:6px;}
   .crest-input::placeholder{color:var(--ink-muted);}
 
-  .cat-block{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;}
-  .cat-block:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+  .cat-blocks-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+  .cat-block{background:var(--surf2);border:1px solid var(--line);border-radius:6px;padding:10px;}
   .cat-label{font-size:11px;letter-spacing:1px;color:var(--ink-muted);margin-bottom:6px;text-transform:uppercase;}
-  .coach-input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:7px 9px;border-radius:4px;font-size:13px;margin-bottom:8px;}
+  .coach-input{width:100%;background:var(--surf3);border:1px solid var(--line);color:var(--ink);padding:7px 9px;border-radius:4px;font-size:13px;margin-bottom:8px;}
   .coach-input::placeholder{color:var(--ink-muted);}
-  .tourn-input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:6px 9px;border-radius:4px;font-size:12px;margin-bottom:8px;}
+  .tourn-input{width:100%;background:var(--surf3);border:1px solid var(--line);color:var(--ink);padding:6px 9px;border-radius:4px;font-size:12px;margin-bottom:8px;}
   .tourn-input::placeholder{color:var(--ink-muted);}
 
   .status-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
@@ -136,6 +136,21 @@
   .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px;}
   .modal-btn-primary{background:var(--light);color:#2A2410;border:none;padding:8px 14px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;}
   .modal-btn-secondary{background:none;border:1px solid var(--line);color:var(--ink-muted);padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;}
+
+  /* Legenda */
+  .legend{display:flex;gap:18px;flex-wrap:wrap;background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-bottom:20px;}
+  .legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-muted);}
+  .legend-item b{color:var(--ink);font-weight:600;}
+
+  /* Indicador de salvo */
+  .save-indicator{font-size:12px;color:var(--estavel);opacity:0;transition:opacity .3s;align-self:center;}
+
+  /* Observações */
+  .obs-box{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:16px;}
+  .obs-view{font-size:14px;line-height:1.6;white-space:pre-wrap;color:var(--ink);}
+  .obs-view.empty-text{color:var(--ink-muted);font-style:italic;}
+  .obs-edit{width:100%;min-height:160px;background:var(--surf2);border:1px solid var(--line);color:var(--ink);font-size:14px;line-height:1.6;padding:12px;border-radius:4px;resize:vertical;font-family:inherit;}
+  .obs-hint{font-size:11px;color:var(--ink-muted);margin-top:6px;}
 </style>
 </head>
 <body>
@@ -148,13 +163,20 @@
   <div class="tabs" style="justify-content:space-between;">
     <div style="display:flex;">
       <button class="tab-btn active" data-tab="mapa">Mapa geral</button>
+      <button class="tab-btn" data-tab="obs">Observações</button>
       <button class="tab-btn" data-tab="times" id="tab-times-btn" style="display:none;">Times</button>
     </div>
-    <div style="display:flex;gap:8px;">
+    <div style="display:flex;gap:8px;align-items:center;">
+      <span class="save-indicator" id="save-indicator">Salvo ✓</span>
       <button class="refresh-btn" id="btn-admin">&#128274; Modo admin</button>
     </div>
   </div>
-  <div id="sync-note" style="font-size:11px;color:var(--ink-muted);margin:-12px 0 16px;"></div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="dot" style="background:var(--estavel);"></span><b>Estável</b> — técnico no cargo, sem sinais de instabilidade</div>
+    <div class="legend-item"><span class="dot" style="background:var(--alerta);"></span><b>Alerta</b> — situação em observação (cobrança, resultados ruins, rumores)</div>
+    <div class="legend-item"><span class="dot" style="background:var(--sem);"></span><b>Sem técnico</b> — cargo vago ou risco iminente de saída</div>
+  </div>
 
   <div id="loading" class="loading">Carregando boletim...</div>
 
@@ -163,10 +185,19 @@
     <div class="addbar">
       <input type="text" id="in-team" placeholder="Nome do time">
       <button id="btn-add">Adicionar time</button>
+      <button class="reset-btn" id="btn-toggle-all">Recolher todos</button>
     </div>
     <div class="empty" id="empty" style="display:none;">Nenhum time cadastrado ainda. Adicione o primeiro time acima.</div>
     <div class="grid" id="grid"></div>
     <div class="footerbar"><button class="reset-btn" id="btn-reset">Limpar boletim</button></div>
+  </div>
+
+  <div class="tab-panel" id="panel-obs">
+    <div class="obs-box">
+      <div class="obs-view" id="obs-view"></div>
+      <textarea class="obs-edit" id="obs-edit" style="display:none;" placeholder="Escreva aqui observações gerais visíveis para todos (ex: contexto da temporada, avisos, prazos)..."></textarea>
+      <div class="obs-hint" id="obs-hint" style="display:none;">Só você (admin) edita este texto. Ele fica visível pra todo mundo que acessar o site.</div>
+    </div>
   </div>
 
   <div class="tab-panel active" id="panel-mapa">
@@ -209,6 +240,14 @@ const CATS = [
   {id:'executivo', label:'Executivo de base', tournament:false}
 ];
 let board = [];
+let globalNotes = '';
+
+function flashSaved(){
+  const el = document.getElementById('save-indicator');
+  el.style.opacity = '1';
+  clearTimeout(window._saveTimeout);
+  window._saveTimeout = setTimeout(() => { el.style.opacity = '0'; }, 1400);
+}
 
 function todayStr(){ return new Date().toLocaleDateString('pt-BR'); }
 function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -260,9 +299,38 @@ db.ref('board').on('value', (snapshot) => {
 });
 
 async function saveBoard(){
-  try{ await db.ref('board').set(board); }
+  try{ await db.ref('board').set(board); flashSaved(); }
   catch(e){ /* falha silenciosa; tenta de novo na próxima edição */ }
 }
+
+/* ================= OBSERVAÇÕES GERAIS ================= */
+db.ref('globalNotes').on('value', (snapshot) => {
+  globalNotes = snapshot.val() || '';
+  renderObs();
+});
+
+function renderObs(){
+  const view = document.getElementById('obs-view');
+  const edit = document.getElementById('obs-edit');
+  const hint = document.getElementById('obs-hint');
+  if(isAdmin){
+    view.style.display = 'none';
+    edit.style.display = 'block';
+    hint.style.display = 'block';
+    if(document.activeElement !== edit){ edit.value = globalNotes; }
+  }else{
+    view.style.display = 'block';
+    edit.style.display = 'none';
+    hint.style.display = 'none';
+    view.textContent = globalNotes || 'Nenhuma observação registrada ainda.';
+    view.classList.toggle('empty-text', !globalNotes);
+  }
+}
+
+document.getElementById('obs-edit').onblur = async () => {
+  const val = document.getElementById('obs-edit').value;
+  try{ await db.ref('globalNotes').set(val); flashSaved(); }catch(e){}
+};
 
 /* ================= MODAL ================= */
 function openModal(html){
@@ -323,6 +391,7 @@ function setAdminUI(on){
     document.querySelector('.tab-btn[data-tab="mapa"]').classList.add('active');
     document.getElementById('panel-mapa').classList.add('active');
   }
+  renderObs();
 }
 
 auth.onAuthStateChanged((user) => {
@@ -352,6 +421,7 @@ function renderTimes(){
   const empty = document.getElementById('empty');
   grid.innerHTML = '';
   empty.style.display = board.length === 0 ? 'block' : 'none';
+  document.getElementById('btn-toggle-all').textContent = (board.length && board.every(e => e.collapsed)) ? 'Expandir todos' : 'Recolher todos';
 
   board.forEach(entry => {
     if(entry.collapsed === undefined) entry.collapsed = false;
@@ -431,6 +501,9 @@ function renderTimes(){
       return;
     }
 
+    const blocksWrap = document.createElement('div');
+    blocksWrap.className = 'cat-blocks-wrap';
+
     CATS.forEach(cat => {
       const catData = entry.categories[cat.id];
       const block = document.createElement('div');
@@ -487,9 +560,10 @@ function renderTimes(){
       meta.textContent = 'Última atualização: ' + (catData.lastUpdate || todayStr());
       block.appendChild(meta);
 
-      card.appendChild(block);
+      blocksWrap.appendChild(block);
     });
 
+    card.appendChild(blocksWrap);
     grid.appendChild(card);
   });
 
@@ -524,6 +598,15 @@ document.getElementById('btn-add').onclick = () => {
   teamInput.value = '';
   saveBoard();
   renderAll();
+};
+document.getElementById('in-team').onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('btn-add').click(); };
+
+document.getElementById('btn-toggle-all').onclick = () => {
+  if(board.length === 0) return;
+  const shouldCollapse = !board.every(e => e.collapsed);
+  board.forEach(e => { e.collapsed = shouldCollapse; });
+  saveBoard();
+  renderTimes();
 };
 
 document.getElementById('btn-reset').onclick = () => {
