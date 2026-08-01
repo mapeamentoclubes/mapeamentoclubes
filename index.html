@@ -336,9 +336,11 @@ db.ref('board').on('value', (snapshot) => {
   renderAll();
 });
 
+let suppressCompEcho = false;
 db.ref('competitions').on('value', (snapshot) => {
   const val = snapshot.val() || {};
   competitions = { sub20: val.sub20 || [], sub17: val.sub17 || [] };
+  if(suppressCompEcho){ suppressCompEcho = false; return; }
   if(isTyping()) return;
   renderCompTab('sub20');
   renderCompTab('sub17');
@@ -350,8 +352,13 @@ async function saveBoard(){
   catch(e){ flashError(); }
 }
 async function saveCompetitions(){
-  try{ await db.ref('competitions').set(competitions); flashSaved(); }
-  catch(e){ flashError(); }
+  try{ suppressCompEcho = true; await db.ref('competitions').set(competitions); flashSaved(); }
+  catch(e){ suppressCompEcho = false; flashError(); }
+}
+let compSaveTimeout = null;
+function scheduleSaveCompetitions(){
+  clearTimeout(compSaveTimeout);
+  compSaveTimeout = setTimeout(saveCompetitions, 350);
 }
 function flashSaved(){
   const el = document.getElementById('save-indicator');
@@ -882,8 +889,8 @@ function renderCompTab(catId){
         }else{
           comp.teamIds = comp.teamIds.filter(id => id !== entry.id);
         }
-        saveCompetitions();
         renderMapa();
+        scheduleSaveCompetitions();
       };
       label.appendChild(checkbox);
       const span = document.createElement('span');
