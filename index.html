@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boletim Técnico Sub-20 / Sub-17</title>
+
+<!-- Firebase (Auth + Realtime Database) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<style>
+  :root{
+    --bg0:#10140F;
+    --surf1:#1B211A;
+    --surf2:#232A20;
+    --surf3:#2C3427;
+    --line:#3A4234;
+    --ink:#EDEAE0;
+    --ink-muted:#8B9585;
+    --light:#E8D999;
+    --estavel:#5FA86A; --estavel-bg:#1E2C1F;
+    --alerta:#D6C24A; --alerta-bg:#2E2B18;
+    --sem:#C4523A; --sem-bg:#301E17;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  .board{
+    background:var(--bg0);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    padding:26px 22px 44px;
+    min-height:100vh;
+  }
+  .display{
+    font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+    letter-spacing:0.5px;
+  }
+  .header{
+    border-bottom:2px solid var(--line);
+    padding-bottom:14px;
+    margin-bottom:16px;
+  }
+  .header h1{margin:0;font-size:24px;color:var(--light);font-weight:400;}
+  .header p{margin:4px 0 0;font-size:13px;color:var(--ink-muted);}
+
+  .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .tab-btn{
+    background:none;border:none;color:var(--ink-muted);
+    padding:9px 16px;font-size:13.5px;cursor:pointer;
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+  }
+  .tab-btn.active{color:var(--light);border-bottom-color:var(--light);}
+  .refresh-btn{background:none;border:1px solid var(--line);color:var(--ink-muted);padding:6px 12px;border-radius:4px;font-size:12.5px;cursor:pointer;align-self:center;height:fit-content;}
+  .refresh-btn:hover{color:var(--light);border-color:var(--light);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .summary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+  .chip{font-size:12px;padding:6px 12px;border-radius:3px;border:1px solid var(--line);background:var(--surf1);color:var(--ink-muted);white-space:nowrap;}
+  .chip b{color:var(--ink);font-weight:600;}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px;flex-shrink:0;}
+
+  .addbar{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:22px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .addbar input{background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:9px 10px;border-radius:4px;font-size:14px;flex:1;min-width:140px;}
+  .addbar input::placeholder{color:var(--ink-muted);}
+  .addbar button{background:var(--light);color:#2A2410;border:none;padding:9px 16px;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;}
+  .addbar button:hover{opacity:0.9;}
+
+  .empty{color:var(--ink-muted);font-size:14px;padding:40px 10px;text-align:center;border:1px dashed var(--line);border-radius:6px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;}
+
+  .card{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;}
+  .card-top{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:10px;}
+  .team-name{
+    font-size:19px;color:var(--ink);background:none;border:none;
+    font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;
+    letter-spacing:0.5px;width:100%;padding:2px 0;
+  }
+  .team-name:focus{outline:none;border-bottom:1px solid var(--light);}
+  .remove{background:none;border:none;color:var(--ink-muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;flex-shrink:0;}
+  .remove:hover{color:var(--sem);}
+  .toggle-btn{background:none;border:none;color:var(--ink-muted);cursor:pointer;font-size:13px;line-height:1;padding:4px 6px;flex-shrink:0;}
+  .toggle-btn:hover{color:var(--light);}
+  .card.collapsed{padding-bottom:10px;}
+  .mini-summary{border-top:1px solid var(--line);padding-top:8px;margin-top:4px;display:flex;flex-direction:column;gap:4px;}
+  .mini-row{font-size:12px;color:var(--ink-muted);display:flex;align-items:center;}
+  .mini-row .dot{margin-right:6px;}
+  .crest-preview{width:40px;height:40px;border-radius:50%;background:var(--surf3);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--light);flex-shrink:0;overflow:hidden;}
+  .crest-preview img{width:100%;height:100%;object-fit:cover;}
+  .crest-input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:6px 9px;border-radius:4px;font-size:11.5px;margin-top:6px;}
+  .crest-input::placeholder{color:var(--ink-muted);}
+
+  .cat-block{border-top:1px solid var(--line);padding-top:10px;margin-top:10px;}
+  .cat-block:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+  .cat-label{font-size:11px;letter-spacing:1px;color:var(--ink-muted);margin-bottom:6px;text-transform:uppercase;}
+  .coach-input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:7px 9px;border-radius:4px;font-size:13px;margin-bottom:8px;}
+  .coach-input::placeholder{color:var(--ink-muted);}
+  .tourn-input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:6px 9px;border-radius:4px;font-size:12px;margin-bottom:8px;}
+  .tourn-input::placeholder{color:var(--ink-muted);}
+
+  .status-row{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;}
+  .status-btn{flex:1;min-width:56px;font-size:10.5px;padding:6px 4px;border-radius:3px;border:1px solid var(--line);background:var(--surf2);color:var(--ink-muted);cursor:pointer;text-align:center;}
+  .status-btn.active.st-estavel{background:var(--estavel-bg);color:var(--estavel);border-color:var(--estavel);}
+  .status-btn.active.st-alerta{background:var(--alerta-bg);color:var(--alerta);border-color:var(--alerta);}
+  .status-btn.active.st-sem{background:var(--sem-bg);color:var(--sem);border-color:var(--sem);}
+  .pulse{animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(196,82,58,0.5);}50%{box-shadow:0 0 0 4px rgba(196,82,58,0);}}
+
+  textarea{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);font-size:12px;padding:7px;border-radius:4px;resize:vertical;min-height:38px;font-family:inherit;}
+  .meta{font-size:10px;color:var(--ink-muted);margin-top:5px;}
+
+  .footerbar{margin-top:24px;display:flex;justify-content:flex-end;}
+  .reset-btn{background:none;border:1px solid var(--line);color:var(--ink-muted);padding:6px 12px;border-radius:4px;font-size:11.5px;cursor:pointer;}
+  .reset-btn:hover{color:var(--sem);border-color:var(--sem);}
+  .loading{color:var(--ink-muted);font-size:13px;padding:20px 0;}
+
+  /* Mapa geral */
+  .map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .map-tile{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:12px;display:flex;gap:10px;align-items:flex-start;}
+  .emblem{width:38px;height:38px;border-radius:50%;background:var(--surf3);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--light);flex-shrink:0;overflow:hidden;}
+  .emblem img{width:100%;height:100%;object-fit:cover;}
+  .map-info{flex:1;min-width:0;}
+  .map-team{font-size:14.5px;margin-bottom:5px;color:var(--ink);}
+  .map-row{font-size:11.5px;color:var(--ink-muted);display:flex;align-items:flex-start;gap:5px;margin-bottom:5px;}
+  .map-row b{color:var(--ink);font-weight:500;}
+  .map-tourn{font-size:10.5px;color:var(--ink-muted);font-style:italic;display:block;margin-top:1px;}
+
+  /* Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;}
+  .modal-box{background:var(--surf1);border:1px solid var(--line);border-radius:8px;padding:20px;width:100%;max-width:320px;}
+  .modal-title{font-size:15px;color:var(--ink);margin-bottom:12px;}
+  .modal-input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:9px 10px;border-radius:4px;font-size:14px;margin-bottom:8px;}
+  .modal-error{font-size:12px;color:var(--sem);margin-bottom:8px;min-height:14px;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px;}
+  .modal-btn-primary{background:var(--light);color:#2A2410;border:none;padding:8px 14px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;}
+  .modal-btn-secondary{background:none;border:1px solid var(--line);color:var(--ink-muted);padding:8px 14px;border-radius:4px;font-size:13px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="header">
+    <h1 class="display">BOLETIM TÉCNICO — SUB-20 / SUB-17</h1>
+    <p>acompanhamento da comissão técnica, editável quando você quiser</p>
+  </div>
+
+  <div class="tabs" style="justify-content:space-between;">
+    <div style="display:flex;">
+      <button class="tab-btn active" data-tab="mapa">Mapa geral</button>
+      <button class="tab-btn" data-tab="times" id="tab-times-btn" style="display:none;">Times</button>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="refresh-btn" id="btn-admin">&#128274; Modo admin</button>
+    </div>
+  </div>
+  <div id="sync-note" style="font-size:11px;color:var(--ink-muted);margin:-12px 0 16px;"></div>
+
+  <div id="loading" class="loading">Carregando boletim...</div>
+
+  <div class="tab-panel" id="panel-times">
+    <div class="summary" id="summary"></div>
+    <div class="addbar">
+      <input type="text" id="in-team" placeholder="Nome do time">
+      <button id="btn-add">Adicionar time</button>
+    </div>
+    <div class="empty" id="empty" style="display:none;">Nenhum time cadastrado ainda. Adicione o primeiro time acima.</div>
+    <div class="grid" id="grid"></div>
+    <div class="footerbar"><button class="reset-btn" id="btn-reset">Limpar boletim</button></div>
+  </div>
+
+  <div class="tab-panel active" id="panel-mapa">
+    <div class="empty" id="empty-mapa" style="display:none;">Nenhum time cadastrado ainda.</div>
+    <div class="map-grid" id="map-grid"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" style="display:none;">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<script>
+/* ================= FIREBASE ================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAUxF1cW1ImBDtaTFT185PG-NUasrPPjKc",
+  authDomain: "mapeamentoclubes.firebaseapp.com",
+  databaseURL: "https://mapeamentoclubes-default-rtdb.firebaseio.com",
+  projectId: "mapeamentoclubes",
+  storageBucket: "mapeamentoclubes.firebasestorage.app",
+  messagingSenderId: "202699926293",
+  appId: "1:202699926293:web:48750a50596516f8ae571c",
+  measurementId: "G-9GTE8CHCLC"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+const ADMIN_EMAIL = "filipe-df@hotmail.com"; // e-mail cadastrado no Authentication
+
+/* ================= ESTADO ================= */
+let isAdmin = false;
+const STATUS = [
+  {id:'estavel', label:'Estável', cls:'st-estavel'},
+  {id:'alerta', label:'Alerta', cls:'st-alerta'},
+  {id:'sem', label:'Sem técnico', cls:'st-sem'}
+];
+const CATS = [
+  {id:'sub20', label:'Sub-20', tournament:true},
+  {id:'sub17', label:'Sub-17', tournament:true},
+  {id:'executivo', label:'Executivo de base', tournament:false}
+];
+let board = [];
+
+function todayStr(){ return new Date().toLocaleDateString('pt-BR'); }
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function emptyCat(){ return {coach:'', status:'sem', notes:'', tournament:'', lastUpdate:todayStr()}; }
+function escapeHtml(str){ const d=document.createElement('div'); d.textContent = str||''; return d.innerHTML; }
+function initials(name){
+  return (name||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '?';
+}
+function looksLikeUrl(str){
+  return /^https?:\/\//i.test((str||'').trim());
+}
+function renderCrestPreview(container, entry){
+  const crest = (entry.crest || '').trim();
+  container.innerHTML = '';
+  if(looksLikeUrl(crest)){
+    const img = document.createElement('img');
+    img.src = crest;
+    img.alt = '';
+    img.onerror = () => { container.innerHTML = ''; container.textContent = initials(entry.team); };
+    container.appendChild(img);
+  }else if(crest){
+    container.textContent = crest;
+  }else{
+    container.textContent = initials(entry.team);
+  }
+}
+function crestHtml(entry){
+  const crest = (entry.crest || '').trim();
+  if(looksLikeUrl(crest)){
+    return '<img src="' + crest.replace(/"/g,'&quot;') + '" alt="" onerror="this.parentNode.textContent=\'' + initials(entry.team) + '\'">';
+  }
+  return escapeHtml(crest || initials(entry.team));
+}
+function statusColorVar(id){
+  return id==='estavel'?'var(--estavel)':id==='alerta'?'var(--alerta)':'var(--sem)';
+}
+function isTyping(){
+  const el = document.activeElement;
+  return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+}
+
+/* ================= SINCRONIZAÇÃO EM TEMPO REAL ================= */
+db.ref('board').on('value', (snapshot) => {
+  document.getElementById('loading').style.display = 'none';
+  const fresh = snapshot.val() || [];
+  if(isTyping()) return; // não atropela quem está digitando; próxima mudança de campo já sincroniza
+  board = fresh;
+  renderAll();
+});
+
+async function saveBoard(){
+  try{ await db.ref('board').set(board); }
+  catch(e){ /* falha silenciosa; tenta de novo na próxima edição */ }
+}
+
+/* ================= MODAL ================= */
+function openModal(html){
+  document.getElementById('modal-box').innerHTML = html;
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+function closeModal(){
+  document.getElementById('modal-overlay').style.display = 'none';
+}
+function confirmModal(message, onYes){
+  openModal(
+    '<div class="modal-title">' + escapeHtml(message) + '</div>' +
+    '<div class="modal-actions">' +
+      '<button id="modal-cancel" class="modal-btn-secondary">Cancelar</button>' +
+      '<button id="modal-confirm" class="modal-btn-primary">Confirmar</button>' +
+    '</div>'
+  );
+  document.getElementById('modal-confirm').onclick = () => { closeModal(); onYes(); };
+  document.getElementById('modal-cancel').onclick = closeModal;
+}
+function passwordModal(){
+  openModal(
+    '<div class="modal-title">Senha de admin</div>' +
+    '<input type="password" id="admin-pass-input" class="modal-input" placeholder="Digite a senha">' +
+    '<div class="modal-error" id="admin-pass-error"></div>' +
+    '<div class="modal-actions">' +
+      '<button id="modal-cancel" class="modal-btn-secondary">Cancelar</button>' +
+      '<button id="modal-confirm" class="modal-btn-primary">Entrar</button>' +
+    '</div>'
+  );
+  const input = document.getElementById('admin-pass-input');
+  input.focus();
+  const tryLogin = () => {
+    const errorEl = document.getElementById('admin-pass-error');
+    errorEl.textContent = '';
+    auth.signInWithEmailAndPassword(ADMIN_EMAIL, input.value)
+      .then(() => { closeModal(); })
+      .catch(() => { errorEl.textContent = 'Senha incorreta.'; });
+  };
+  document.getElementById('modal-confirm').onclick = tryLogin;
+  input.onkeydown = (e) => { if(e.key === 'Enter') tryLogin(); };
+  document.getElementById('modal-cancel').onclick = closeModal;
+}
+
+/* ================= LOGIN / ADMIN ================= */
+function setAdminUI(on){
+  const btn = document.getElementById('btn-admin');
+  const timesBtn = document.getElementById('tab-times-btn');
+  isAdmin = on;
+  if(on){
+    btn.innerHTML = '&#128275; Sair do modo admin';
+    timesBtn.style.display = '';
+  }else{
+    btn.innerHTML = '&#128274; Modo admin';
+    timesBtn.style.display = 'none';
+    timesBtn.classList.remove('active');
+    document.getElementById('panel-times').classList.remove('active');
+    document.querySelector('.tab-btn[data-tab="mapa"]').classList.add('active');
+    document.getElementById('panel-mapa').classList.add('active');
+  }
+}
+
+auth.onAuthStateChanged((user) => {
+  if(user && user.email === ADMIN_EMAIL){
+    setAdminUI(true);
+  }else{
+    setAdminUI(false);
+  }
+});
+
+document.getElementById('btn-admin').onclick = () => {
+  if(isAdmin){
+    auth.signOut();
+  }else{
+    passwordModal();
+  }
+};
+
+/* ================= TIMES TAB ================= */
+function renderAll(){
+  renderTimes();
+  renderMapa();
+}
+
+function renderTimes(){
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  grid.innerHTML = '';
+  empty.style.display = board.length === 0 ? 'block' : 'none';
+
+  board.forEach(entry => {
+    if(entry.collapsed === undefined) entry.collapsed = false;
+    CATS.forEach(cat => { if(!entry.categories[cat.id]) entry.categories[cat.id] = emptyCat(); });
+
+    const card = document.createElement('div');
+    card.className = 'card' + (entry.collapsed ? ' collapsed' : '');
+
+    const top = document.createElement('div');
+    top.className = 'card-top';
+    top.style.alignItems = 'flex-start';
+
+    const crestPreview = document.createElement('div');
+    crestPreview.className = 'crest-preview';
+
+    const nameWrap = document.createElement('div');
+    nameWrap.style.flex = '1';
+    nameWrap.style.minWidth = '0';
+
+    const nameInput = document.createElement('input');
+    nameInput.className = 'team-name';
+    nameInput.value = entry.team;
+    nameInput.oninput = () => { entry.team = nameInput.value; };
+    nameInput.onblur = () => { saveBoard(); renderMapa(); };
+
+    nameWrap.appendChild(nameInput);
+
+    if(!entry.collapsed){
+      const crestInput = document.createElement('input');
+      crestInput.className = 'crest-input';
+      crestInput.placeholder = 'Símbolo: emoji (⚽) ou link de imagem do escudo';
+      crestInput.value = entry.crest || '';
+      crestInput.oninput = () => { entry.crest = crestInput.value; renderCrestPreview(crestPreview, entry); };
+      crestInput.onblur = () => { saveBoard(); renderMapa(); };
+      nameWrap.appendChild(crestInput);
+    }
+    renderCrestPreview(crestPreview, entry);
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'toggle-btn';
+    toggleBtn.innerHTML = entry.collapsed ? '&#9656;' : '&#9662;';
+    toggleBtn.title = entry.collapsed ? 'Expandir' : 'Recolher';
+    toggleBtn.onclick = () => {
+      entry.collapsed = !entry.collapsed;
+      saveBoard();
+      renderTimes();
+    };
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'remove';
+    removeBtn.innerHTML = '&times;';
+    removeBtn.title = 'Remover time';
+    removeBtn.onclick = () => {
+      confirmModal('Remover ' + entry.team + ' do boletim?', () => {
+        board = board.filter(e => e.id !== entry.id);
+        saveBoard(); renderAll();
+      });
+    };
+    top.appendChild(crestPreview);
+    top.appendChild(nameWrap);
+    top.appendChild(toggleBtn);
+    top.appendChild(removeBtn);
+    card.appendChild(top);
+
+    if(entry.collapsed){
+      const mini = document.createElement('div');
+      mini.className = 'mini-summary';
+      CATS.forEach(cat => {
+        const catData = entry.categories[cat.id];
+        const row = document.createElement('div');
+        row.className = 'mini-row';
+        row.innerHTML = '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span>' + cat.label + ': ' + escapeHtml(catData.coach || '—');
+        mini.appendChild(row);
+      });
+      card.appendChild(mini);
+      grid.appendChild(card);
+      return;
+    }
+
+    CATS.forEach(cat => {
+      const catData = entry.categories[cat.id];
+      const block = document.createElement('div');
+      block.className = 'cat-block';
+
+      const label = document.createElement('div');
+      label.className = 'cat-label';
+      label.textContent = cat.label;
+      block.appendChild(label);
+
+      const coachInput = document.createElement('input');
+      coachInput.className = 'coach-input';
+      coachInput.placeholder = cat.id === 'executivo' ? 'Nome do executivo de base' : ('Nome do técnico ' + cat.label);
+      coachInput.value = catData.coach;
+      coachInput.oninput = () => { catData.coach = coachInput.value; };
+      coachInput.onblur = () => { saveBoard(); renderMapa(); };
+      block.appendChild(coachInput);
+
+      if(cat.tournament){
+        const tournInput = document.createElement('input');
+        tournInput.className = 'tourn-input';
+        tournInput.placeholder = 'Torneio(s) atual (ex: Copa SP, Brasileirão Sub-20)';
+        tournInput.value = catData.tournament || '';
+        tournInput.oninput = () => { catData.tournament = tournInput.value; };
+        tournInput.onblur = () => { saveBoard(); renderMapa(); };
+        block.appendChild(tournInput);
+      }
+
+      const statusRow = document.createElement('div');
+      statusRow.className = 'status-row';
+      STATUS.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'status-btn ' + s.cls + (catData.status === s.id ? ' active' : '');
+        if(s.id==='sem' && catData.status==='sem'){ btn.classList.add('pulse'); }
+        btn.textContent = s.label;
+        btn.onclick = () => {
+          catData.status = s.id;
+          catData.lastUpdate = todayStr();
+          saveBoard(); renderAll();
+        };
+        statusRow.appendChild(btn);
+      });
+      block.appendChild(statusRow);
+
+      const notes = document.createElement('textarea');
+      notes.placeholder = 'Observações (' + cat.label + ')';
+      notes.value = catData.notes || '';
+      notes.oninput = () => { catData.notes = notes.value; };
+      notes.onblur = () => { saveBoard(); };
+      block.appendChild(notes);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = 'Última atualização: ' + (catData.lastUpdate || todayStr());
+      block.appendChild(meta);
+
+      card.appendChild(block);
+    });
+
+    grid.appendChild(card);
+  });
+
+  renderSummary();
+}
+
+function renderSummary(){
+  const summary = document.getElementById('summary');
+  summary.innerHTML = '';
+  CATS.forEach(cat => {
+    STATUS.forEach(s => {
+      const count = board.filter(e => e.categories[cat.id].status === s.id).length;
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = '<span class="dot" style="background:' + statusColorVar(s.id) + '"></span>' + cat.label + ' ' + s.label + ': <b>' + count + '</b>';
+      summary.appendChild(chip);
+    });
+  });
+}
+
+document.getElementById('btn-add').onclick = () => {
+  const teamInput = document.getElementById('in-team');
+  const team = teamInput.value.trim();
+  if(!team) return;
+  board.push({
+    id: uid(),
+    team: team,
+    crest: '',
+    collapsed: false,
+    categories: { sub20: emptyCat(), sub17: emptyCat(), executivo: emptyCat() }
+  });
+  teamInput.value = '';
+  saveBoard();
+  renderAll();
+};
+
+document.getElementById('btn-reset').onclick = () => {
+  confirmModal('Isso vai apagar todos os times do boletim. Continuar?', () => {
+    board = [];
+    saveBoard();
+    renderAll();
+  });
+};
+
+/* ================= MAPA GERAL TAB ================= */
+function renderMapa(){
+  const mapGrid = document.getElementById('map-grid');
+  const emptyMapa = document.getElementById('empty-mapa');
+  mapGrid.innerHTML = '';
+  emptyMapa.style.display = board.length === 0 ? 'block' : 'none';
+
+  board.forEach(entry => {
+    const tile = document.createElement('div');
+    tile.className = 'map-tile';
+
+    const emblem = document.createElement('div');
+    emblem.className = 'emblem';
+    emblem.innerHTML = crestHtml(entry);
+    tile.appendChild(emblem);
+
+    const info = document.createElement('div');
+    info.className = 'map-info';
+    const teamName = document.createElement('div');
+    teamName.className = 'map-team';
+    teamName.textContent = entry.team;
+    info.appendChild(teamName);
+
+    CATS.forEach(cat => {
+      const catData = entry.categories[cat.id];
+      const row = document.createElement('div');
+      row.className = 'map-row';
+      let html = '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span><span><b>' + cat.label + ':</b> ' + escapeHtml(catData.coach || 'sem técnico');
+      if(catData.tournament){
+        html += '<span class="map-tourn">' + escapeHtml(catData.tournament) + '</span>';
+      }
+      html += '</span>';
+      row.innerHTML = html;
+      info.appendChild(row);
+    });
+
+    tile.appendChild(info);
+    mapGrid.appendChild(tile);
+  });
+}
+
+/* ================= TABS ================= */
+document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  };
+});
+</script>
+</body>
+</html>
