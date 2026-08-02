@@ -343,9 +343,9 @@ const STATUS = [
   {id:'sem', label:'Sem técnico', cls:'st-sem'}
 ];
 const CATS = [
-  {id:'sub20', label:'Sub-20', tournament:true},
-  {id:'sub17', label:'Sub-17', tournament:true},
-  {id:'executivo', label:'Comando da base', tournament:false}
+  {id:'sub20', label:'Sub-20', tournament:true, hasStatus:true},
+  {id:'sub17', label:'Sub-17', tournament:true, hasStatus:true},
+  {id:'executivo', label:'Nomes de comando', tournament:false, hasStatus:false}
 ];
 let board = [];
 let competitions = { sub20: [], sub17: [] };
@@ -602,6 +602,7 @@ function renderTimesList(){
     item.className = 'side-list-item' + (entry.id === selectedTeamId ? ' active' : '');
     let dots = '';
     CATS.forEach(cat => {
+      if(!cat.hasStatus) return;
       dots += '<span class="dot" style="background:' + statusColorVar(entry.categories[cat.id].status) + ';margin-right:3px;"></span>';
     });
     item.innerHTML = '<span class="name">' + escapeHtml(entry.team) + '</span><span>' + dots + '</span>';
@@ -696,35 +697,37 @@ function renderTimesEditor(){
 
     const coachInput = document.createElement('input');
     coachInput.className = 'coach-input';
-    coachInput.placeholder = cat.id === 'executivo' ? 'Nome do responsável pelo comando da base' : ('Nome do técnico ' + cat.label);
+    coachInput.placeholder = cat.id === 'executivo' ? 'Nome(s) do comando (separe por vírgula se houver mais de um)' : ('Nome do técnico ' + cat.label);
     coachInput.value = catData.coach;
     coachInput.oninput = () => { catData.coach = coachInput.value; };
     coachInput.onblur = () => { saveBoard(); renderMapa(); renderGeneralList(); };
     block.appendChild(coachInput);
 
-    const statusRow = document.createElement('div');
-    statusRow.className = 'status-row';
-    STATUS.forEach(s => {
-      const btn = document.createElement('button');
-      btn.className = 'status-btn ' + s.cls + (catData.status === s.id ? ' active' : '');
-      if(s.id==='sem' && catData.status==='sem'){ btn.classList.add('pulse'); }
-      btn.textContent = s.label;
-      btn.onclick = () => {
-        catData.status = s.id;
-        catData.lastUpdate = todayStr();
-        saveBoard(); renderTimesList(); renderMapa(); renderGeneralList();
-        block.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active', 'pulse'));
-        btn.classList.add('active');
-        if(s.id === 'sem') btn.classList.add('pulse');
-      };
-      statusRow.appendChild(btn);
-    });
-    block.appendChild(statusRow);
+    if(cat.hasStatus){
+      const statusRow = document.createElement('div');
+      statusRow.className = 'status-row';
+      STATUS.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'status-btn ' + s.cls + (catData.status === s.id ? ' active' : '');
+        if(s.id==='sem' && catData.status==='sem'){ btn.classList.add('pulse'); }
+        btn.textContent = s.label;
+        btn.onclick = () => {
+          catData.status = s.id;
+          catData.lastUpdate = todayStr();
+          saveBoard(); renderTimesList(); renderMapa(); renderGeneralList();
+          block.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active', 'pulse'));
+          btn.classList.add('active');
+          if(s.id === 'sem') btn.classList.add('pulse');
+        };
+        statusRow.appendChild(btn);
+      });
+      block.appendChild(statusRow);
 
-    const meta = document.createElement('div');
-    meta.className = 'meta';
-    meta.textContent = 'Última atualização: ' + (catData.lastUpdate || todayStr());
-    block.appendChild(meta);
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = 'Última atualização: ' + (catData.lastUpdate || todayStr());
+      block.appendChild(meta);
+    }
 
     blocksWrap.appendChild(block);
   });
@@ -1137,7 +1140,11 @@ function renderMapa(){
       const catData = entry.categories[cat.id];
       const cell = document.createElement('div');
       cell.className = 'mapa-cell';
-      let html = '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span><span class="coach-name">' + escapeHtml(catData.coach || 'sem técnico');
+      let html = '';
+      if(cat.hasStatus){
+        html += '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span>';
+      }
+      html += '<span class="coach-name">' + escapeHtml(catData.coach || (cat.hasStatus ? 'sem técnico' : '—'));
       if(cat.tournament){
         const tournamentText = competitionsForTeam(cat.id, entry.id);
         if(tournamentText){
@@ -1176,7 +1183,7 @@ function buildSummaryText(){
     lines.push(entry.team.toUpperCase());
     CATS.forEach(cat => {
       const catData = entry.categories[cat.id];
-      let line = statusEmoji(catData.status) + ' ' + cat.label + ': ' + (catData.coach || 'sem técnico');
+      let line = (cat.hasStatus ? statusEmoji(catData.status) + ' ' : '') + cat.label + ': ' + (catData.coach || (cat.hasStatus ? 'sem técnico' : '—'));
       if(cat.tournament){
         const t = competitionsForTeam(cat.id, entry.id);
         if(t) line += ' (' + t + ')';
