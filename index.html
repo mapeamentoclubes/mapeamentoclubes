@@ -161,12 +161,41 @@
   .fa-row input{width:100%;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:6px 8px;border-radius:4px;font-size:12.5px;}
 
   /* Competições (admin) */
-  .comp-box{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;}
-  .comp-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-  .comp-name-input{flex:1;background:var(--surf2);border:1px solid var(--line);color:var(--ink);font-size:15px;padding:7px 9px;border-radius:4px;font-family:Impact,Haettenschweiler,"Arial Narrow Bold",sans-serif;letter-spacing:0.5px;}
-  .comp-teams{display:flex;flex-wrap:wrap;gap:10px 16px;padding-top:8px;border-top:1px solid var(--line);}
   .comp-team-check{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-muted);cursor:pointer;}
   .comp-team-check input{cursor:pointer;}
+
+  /* Padrão lista + editor lateral (Times / Competições) */
+  .side-layout{display:grid;grid-template-columns:200px 1fr;gap:14px;align-items:start;}
+  @media (max-width: 640px){ .side-layout{grid-template-columns:1fr;} }
+  .side-list-panel{background:var(--surf1);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .side-list-header{padding:10px 12px;font-size:10px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--line);}
+  .side-list-item{padding:10px 12px;border-left:3px solid transparent;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;cursor:pointer;}
+  .side-list-item:hover{background:var(--surf2);}
+  .side-list-item.active{background:var(--surf2);border-left-color:var(--light);}
+  .side-list-item .name{font-size:12.5px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .side-list-item .sub{font-size:10px;color:var(--ink-muted);}
+  .side-addbar{padding:10px;border-top:1px solid var(--line);display:flex;gap:6px;}
+  .side-addbar input{flex:1;min-width:0;background:var(--surf2);border:1px solid var(--line);color:var(--ink);padding:7px 8px;border-radius:4px;font-size:12px;}
+  .side-addbar button{background:var(--light);color:#2A2410;border:none;padding:7px 10px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;}
+  .side-editor{background:var(--surf1);border:1px solid var(--line);border-radius:6px;padding:16px;min-height:120px;}
+  .side-editor-empty{color:var(--ink-muted);font-size:13px;text-align:center;padding:60px 10px;}
+
+  /* Pílulas de seleção de times (competições) */
+  .pill{font-size:12px;padding:6px 10px;border-radius:14px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid;}
+  .pill.on{background:var(--estavel-bg);border-color:var(--estavel);color:var(--ink);}
+  .pill.off{background:var(--surf2);border-color:var(--line);border-style:dashed;color:var(--ink-muted);}
+  .pill .x{color:var(--ink-muted);font-size:13px;line-height:1;}
+
+  /* Mapa geral em tabela */
+  .mapa-table{background:var(--surf1);border:1px solid var(--line);border-radius:6px;overflow:hidden;}
+  .mapa-table-scroll{overflow-x:auto;}
+  .mapa-row-head{display:grid;grid-template-columns:34px 1.3fr 1fr 1fr 1fr;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:10px;color:var(--ink-muted);text-transform:uppercase;letter-spacing:0.5px;min-width:600px;}
+  .mapa-row{border-bottom:1px solid var(--line);}
+  .mapa-row:last-child{border-bottom:none;}
+  .mapa-row-main{display:grid;grid-template-columns:34px 1.3fr 1fr 1fr 1fr;gap:10px;padding:10px 12px;align-items:center;min-width:600px;}
+  .mapa-cell{font-size:12px;color:var(--ink);display:flex;align-items:center;gap:6px;min-width:0;}
+  .mapa-cell .coach-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .mapa-note-row{padding:0 12px 10px 56px;font-size:11px;color:var(--ink-muted);font-style:italic;line-height:1.4;min-width:600px;}
 </style>
 </head>
 <body>
@@ -199,13 +228,17 @@
   <div id="loading" class="loading">Carregando boletim...</div>
 
   <div class="tab-panel" id="panel-times">
-    <div class="addbar">
-      <input type="text" id="in-team" placeholder="Nome do time">
-      <button id="btn-add">Adicionar time</button>
-      <button class="reset-btn" id="btn-toggle-all">Recolher todos</button>
+    <div class="side-layout">
+      <div class="side-list-panel">
+        <div class="side-list-header">Times</div>
+        <div id="times-list"></div>
+        <div class="side-addbar">
+          <input type="text" id="in-team" placeholder="Nome do time">
+          <button id="btn-add">Adicionar</button>
+        </div>
+      </div>
+      <div class="side-editor" id="times-editor"></div>
     </div>
-    <div class="empty" id="empty" style="display:none;">Nenhum time cadastrado ainda. Adicione o primeiro time acima.</div>
-    <div class="grid" id="grid"></div>
     <div class="footerbar"><button class="reset-btn" id="btn-reset">Limpar boletim</button></div>
   </div>
 
@@ -226,24 +259,43 @@
   </div>
 
   <div class="tab-panel" id="panel-compsub20">
-    <div class="addbar">
-      <input type="text" id="in-comp-sub20" placeholder="Nome da competição (ex: Copa SP)">
-      <button id="btn-add-comp-sub20">Criar competição</button>
+    <div class="side-layout">
+      <div class="side-list-panel">
+        <div class="side-list-header">Competições Sub-20</div>
+        <div id="complist-sub20"></div>
+        <div class="side-addbar">
+          <input type="text" id="in-comp-sub20" placeholder="Nova competição">
+          <button id="btn-add-comp-sub20">Criar</button>
+        </div>
+      </div>
+      <div class="side-editor" id="compeditor-sub20"></div>
     </div>
-    <div id="comp-list-sub20"></div>
   </div>
 
   <div class="tab-panel" id="panel-compsub17">
-    <div class="addbar">
-      <input type="text" id="in-comp-sub17" placeholder="Nome da competição">
-      <button id="btn-add-comp-sub17">Criar competição</button>
+    <div class="side-layout">
+      <div class="side-list-panel">
+        <div class="side-list-header">Competições Sub-17</div>
+        <div id="complist-sub17"></div>
+        <div class="side-addbar">
+          <input type="text" id="in-comp-sub17" placeholder="Nova competição">
+          <button id="btn-add-comp-sub17">Criar</button>
+        </div>
+      </div>
+      <div class="side-editor" id="compeditor-sub17"></div>
     </div>
-    <div id="comp-list-sub17"></div>
   </div>
 
   <div class="tab-panel active" id="panel-mapa">
     <div class="empty" id="empty-mapa" style="display:none;">Nenhum time cadastrado ainda.</div>
-    <div class="map-grid" id="map-grid"></div>
+    <div class="mapa-table" id="mapa-table" style="display:none;">
+      <div class="mapa-table-scroll">
+        <div class="mapa-row-head">
+          <div></div><div>Time</div><div>Sub-20</div><div>Sub-17</div><div>Comando</div>
+        </div>
+        <div id="mapa-rows"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -346,8 +398,10 @@ db.ref('competitions').on('value', (snapshot) => {
   competitions = { sub20: val.sub20 || [], sub17: val.sub17 || [] };
   if(suppressCompEcho){ suppressCompEcho = false; return; }
   if(isTyping()) return;
-  renderCompTab('sub20');
-  renderCompTab('sub17');
+  renderCompList('sub20');
+  renderCompEditor('sub20');
+  renderCompList('sub17');
+  renderCompEditor('sub17');
   renderMapa();
 });
 
@@ -448,8 +502,12 @@ function setAdminUI(on){
     }
   }
   renderFreeAgents();
-  renderCompTab('sub20');
-  renderCompTab('sub17');
+  renderTimesList();
+  renderTimesEditor();
+  renderCompList('sub20');
+  renderCompEditor('sub20');
+  renderCompList('sub17');
+  renderCompEditor('sub17');
 }
 
 auth.onAuthStateChanged((user) => {
@@ -473,186 +531,190 @@ function renderAll(){
   renderTimes();
   renderMapa();
   renderFreeAgents();
-  renderCompTab('sub20');
-  renderCompTab('sub17');
+  renderCompList('sub20');
+  renderCompEditor('sub20');
+  renderCompList('sub17');
+  renderCompEditor('sub17');
   renderGeneralList();
 }
 
+let selectedTeamId = null;
+
 function renderTimes(){
-  const grid = document.getElementById('grid');
-  const empty = document.getElementById('empty');
-  grid.innerHTML = '';
-  empty.style.display = board.length === 0 ? 'block' : 'none';
-  document.getElementById('btn-toggle-all').textContent = (board.length && board.every(e => e.collapsed)) ? 'Expandir todos' : 'Recolher todos';
+  renderTimesList();
+  renderTimesEditor();
+}
+
+function renderTimesList(){
+  const list = document.getElementById('times-list');
+  if(!list) return;
+  list.innerHTML = '';
+
+  if(board.length === 0){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'padding:16px 12px;font-size:12px;color:var(--ink-muted);text-align:center;';
+    empty.textContent = 'Nenhum time ainda.';
+    list.appendChild(empty);
+    return;
+  }
 
   const sortedBoard = [...board].sort((a, b) => a.team.localeCompare(b.team, 'pt-BR', {sensitivity:'base'}));
+  if(!selectedTeamId || !board.some(e => e.id === selectedTeamId)){
+    selectedTeamId = sortedBoard[0].id;
+  }
 
   sortedBoard.forEach(entry => {
-    if(entry.collapsed === undefined) entry.collapsed = false;
-    if(entry.notes === undefined) entry.notes = '';
     CATS.forEach(cat => { if(!entry.categories[cat.id]) entry.categories[cat.id] = emptyCat(); });
-
-    const card = document.createElement('div');
-    card.className = 'card' + (entry.collapsed ? ' collapsed' : '');
-
-    const top = document.createElement('div');
-    top.className = 'card-top';
-    top.style.alignItems = 'flex-start';
-
-    const crestPreview = document.createElement('div');
-    crestPreview.className = 'crest-preview';
-
-    const nameWrap = document.createElement('div');
-    nameWrap.style.flex = '1';
-    nameWrap.style.minWidth = '0';
-
-    const nameInput = document.createElement('input');
-    nameInput.className = 'team-name';
-    nameInput.value = entry.team;
-    nameInput.oninput = () => { entry.team = nameInput.value; };
-    nameInput.onblur = () => { saveBoard(); renderMapa(); };
-
-    nameWrap.appendChild(nameInput);
-
-    if(!entry.collapsed){
-      const crestInput = document.createElement('input');
-      crestInput.className = 'crest-input';
-      crestInput.placeholder = 'Símbolo: emoji (⚽) ou link de imagem do escudo';
-      crestInput.value = entry.crest || '';
-      crestInput.oninput = () => { entry.crest = crestInput.value; renderCrestPreview(crestPreview, entry); };
-      crestInput.onblur = () => { saveBoard(); renderMapa(); };
-      nameWrap.appendChild(crestInput);
-    }
-    renderCrestPreview(crestPreview, entry);
-
-    const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'toggle-btn';
-    toggleBtn.innerHTML = entry.collapsed ? '&#9656;' : '&#9662;';
-    toggleBtn.title = entry.collapsed ? 'Expandir' : 'Recolher';
-    toggleBtn.onclick = () => {
-      entry.collapsed = !entry.collapsed;
-      saveBoard();
-      renderTimes();
-    };
-
-    const removeBtn = document.createElement('button');
-    removeBtn.className = 'remove';
-    removeBtn.innerHTML = '&times;';
-    removeBtn.title = 'Remover time';
-    removeBtn.onclick = () => {
-      confirmModal('Remover ' + entry.team + ' do boletim?', () => {
-        board = board.filter(e => e.id !== entry.id);
-        saveBoard(); renderAll();
-      });
-    };
-    top.appendChild(crestPreview);
-    top.appendChild(nameWrap);
-    top.appendChild(toggleBtn);
-    top.appendChild(removeBtn);
-    card.appendChild(top);
-
-    if(entry.collapsed){
-      const mini = document.createElement('div');
-      mini.className = 'mini-summary';
-      CATS.forEach(cat => {
-        const catData = entry.categories[cat.id];
-        const row = document.createElement('div');
-        row.className = 'mini-row';
-        row.innerHTML = '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span>' + cat.label + ': ' + escapeHtml(catData.coach || '—');
-        mini.appendChild(row);
-      });
-      card.appendChild(mini);
-      grid.appendChild(card);
-      return;
-    }
-
-    const notesArea = document.createElement('textarea');
-    notesArea.placeholder = 'Observação geral do ' + entry.team + ' (aparece no Mapa geral, embaixo do nome)';
-    notesArea.style.marginBottom = '12px';
-    notesArea.value = entry.notes || '';
-    notesArea.oninput = () => { entry.notes = notesArea.value; };
-    notesArea.onblur = () => { saveBoard(); renderMapa(); };
-    card.appendChild(notesArea);
-
-    const blocksWrap = document.createElement('div');
-    blocksWrap.className = 'cat-blocks-wrap';
-
+    const item = document.createElement('div');
+    item.className = 'side-list-item' + (entry.id === selectedTeamId ? ' active' : '');
+    let dots = '';
     CATS.forEach(cat => {
-      const catData = entry.categories[cat.id];
-      const block = document.createElement('div');
-      block.className = 'cat-block';
-
-      const label = document.createElement('div');
-      label.className = 'cat-label';
-      label.textContent = cat.label;
-      block.appendChild(label);
-
-      const coachInput = document.createElement('input');
-      coachInput.className = 'coach-input';
-      coachInput.placeholder = cat.id === 'executivo' ? 'Nome do responsável pelo comando da base' : ('Nome do técnico ' + cat.label);
-      coachInput.value = catData.coach;
-      coachInput.oninput = () => { catData.coach = coachInput.value; };
-      coachInput.onblur = () => { saveBoard(); renderMapa(); };
-      block.appendChild(coachInput);
-
-      const statusRow = document.createElement('div');
-      statusRow.className = 'status-row';
-      STATUS.forEach(s => {
-        const btn = document.createElement('button');
-        btn.className = 'status-btn ' + s.cls + (catData.status === s.id ? ' active' : '');
-        if(s.id==='sem' && catData.status==='sem'){ btn.classList.add('pulse'); }
-        btn.textContent = s.label;
-        btn.onclick = () => {
-          catData.status = s.id;
-          catData.lastUpdate = todayStr();
-          saveBoard(); renderAll();
-        };
-        statusRow.appendChild(btn);
-      });
-      block.appendChild(statusRow);
-
-      const meta = document.createElement('div');
-      meta.className = 'meta';
-      meta.textContent = 'Última atualização: ' + (catData.lastUpdate || todayStr());
-      block.appendChild(meta);
-
-      blocksWrap.appendChild(block);
+      dots += '<span class="dot" style="background:' + statusColorVar(entry.categories[cat.id].status) + ';margin-right:3px;"></span>';
     });
-
-    card.appendChild(blocksWrap);
-    grid.appendChild(card);
+    item.innerHTML = '<span class="name">' + escapeHtml(entry.team) + '</span><span>' + dots + '</span>';
+    item.onclick = () => { selectedTeamId = entry.id; renderTimesList(); renderTimesEditor(); };
+    list.appendChild(item);
   });
+}
+
+function renderTimesEditor(){
+  const editor = document.getElementById('times-editor');
+  if(!editor) return;
+  editor.innerHTML = '';
+
+  const entry = board.find(e => e.id === selectedTeamId);
+  if(!entry){
+    editor.innerHTML = '<div class="side-editor-empty">Selecione um time à esquerda, ou adicione o primeiro time.</div>';
+    return;
+  }
+  if(entry.notes === undefined) entry.notes = '';
+  CATS.forEach(cat => { if(!entry.categories[cat.id]) entry.categories[cat.id] = emptyCat(); });
+
+  const top = document.createElement('div');
+  top.className = 'card-top';
+  top.style.alignItems = 'flex-start';
+
+  const crestPreview = document.createElement('div');
+  crestPreview.className = 'crest-preview';
+
+  const nameWrap = document.createElement('div');
+  nameWrap.style.flex = '1';
+  nameWrap.style.minWidth = '0';
+
+  const nameInput = document.createElement('input');
+  nameInput.className = 'team-name';
+  nameInput.value = entry.team;
+  nameInput.oninput = () => { entry.team = nameInput.value; };
+  nameInput.onblur = () => { saveBoard(); renderMapa(); renderTimesList(); };
+  nameWrap.appendChild(nameInput);
+
+  const crestInput = document.createElement('input');
+  crestInput.className = 'crest-input';
+  crestInput.placeholder = 'Símbolo: emoji (⚽) ou link de imagem do escudo';
+  crestInput.value = entry.crest || '';
+  crestInput.oninput = () => { entry.crest = crestInput.value; renderCrestPreview(crestPreview, entry); };
+  crestInput.onblur = () => { saveBoard(); renderMapa(); };
+  nameWrap.appendChild(crestInput);
+  renderCrestPreview(crestPreview, entry);
+
+  const removeBtn = document.createElement('button');
+  removeBtn.className = 'remove';
+  removeBtn.innerHTML = '&times;';
+  removeBtn.title = 'Remover time';
+  removeBtn.onclick = () => {
+    confirmModal('Remover ' + entry.team + ' do boletim?', () => {
+      board = board.filter(e => e.id !== entry.id);
+      selectedTeamId = null;
+      saveBoard(); renderAll();
+    });
+  };
+  top.appendChild(crestPreview);
+  top.appendChild(nameWrap);
+  top.appendChild(removeBtn);
+  editor.appendChild(top);
+
+  const notesArea = document.createElement('textarea');
+  notesArea.placeholder = 'Observação geral do ' + entry.team + ' (aparece no Mapa geral, embaixo do nome)';
+  notesArea.style.marginBottom = '12px';
+  notesArea.value = entry.notes || '';
+  notesArea.oninput = () => { entry.notes = notesArea.value; };
+  notesArea.onblur = () => { saveBoard(); renderMapa(); };
+  editor.appendChild(notesArea);
+
+  const blocksWrap = document.createElement('div');
+  blocksWrap.className = 'cat-blocks-wrap';
+
+  CATS.forEach(cat => {
+    const catData = entry.categories[cat.id];
+    const block = document.createElement('div');
+    block.className = 'cat-block';
+
+    const label = document.createElement('div');
+    label.className = 'cat-label';
+    label.textContent = cat.label;
+    block.appendChild(label);
+
+    const coachInput = document.createElement('input');
+    coachInput.className = 'coach-input';
+    coachInput.placeholder = cat.id === 'executivo' ? 'Nome do responsável pelo comando da base' : ('Nome do técnico ' + cat.label);
+    coachInput.value = catData.coach;
+    coachInput.oninput = () => { catData.coach = coachInput.value; };
+    coachInput.onblur = () => { saveBoard(); renderMapa(); renderGeneralList(); };
+    block.appendChild(coachInput);
+
+    const statusRow = document.createElement('div');
+    statusRow.className = 'status-row';
+    STATUS.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'status-btn ' + s.cls + (catData.status === s.id ? ' active' : '');
+      if(s.id==='sem' && catData.status==='sem'){ btn.classList.add('pulse'); }
+      btn.textContent = s.label;
+      btn.onclick = () => {
+        catData.status = s.id;
+        catData.lastUpdate = todayStr();
+        saveBoard(); renderTimesList(); renderMapa(); renderGeneralList();
+        block.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active', 'pulse'));
+        btn.classList.add('active');
+        if(s.id === 'sem') btn.classList.add('pulse');
+      };
+      statusRow.appendChild(btn);
+    });
+    block.appendChild(statusRow);
+
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.textContent = 'Última atualização: ' + (catData.lastUpdate || todayStr());
+    block.appendChild(meta);
+
+    blocksWrap.appendChild(block);
+  });
+
+  editor.appendChild(blocksWrap);
 }
 
 document.getElementById('btn-add').onclick = () => {
   const teamInput = document.getElementById('in-team');
   const team = teamInput.value.trim();
   if(!team) return;
-  board.push({
+  const newEntry = {
     id: uid(),
     team: team,
     crest: '',
     notes: '',
-    collapsed: false,
     categories: { sub20: emptyCat(), sub17: emptyCat(), executivo: emptyCat() }
-  });
+  };
+  board.push(newEntry);
+  selectedTeamId = newEntry.id;
   teamInput.value = '';
   saveBoard();
   renderAll();
 };
 document.getElementById('in-team').onkeydown = (e) => { if(e.key === 'Enter') document.getElementById('btn-add').click(); };
 
-document.getElementById('btn-toggle-all').onclick = () => {
-  if(board.length === 0) return;
-  const shouldCollapse = !board.every(e => e.collapsed);
-  board.forEach(e => { e.collapsed = shouldCollapse; });
-  saveBoard();
-  renderTimes();
-};
-
 document.getElementById('btn-reset').onclick = () => {
   confirmModal('Isso vai apagar todos os times do boletim. Continuar?', () => {
     board = [];
+    selectedTeamId = null;
     saveBoard();
     renderAll();
   });
@@ -830,131 +892,194 @@ function renderGeneralList(){
 }
 
 /* ================= COMPETIÇÕES (admin) ================= */
+let selectedCompId = { sub20: null, sub17: null };
+let compSearch = { sub20: '', sub17: '' };
+
 function addCompetition(catId){
   const input = document.getElementById('in-comp-' + catId);
   const name = input.value.trim();
   if(!name) return;
   if(!competitions[catId]) competitions[catId] = [];
-  competitions[catId].push({id: uid(), name: name, teamIds: []});
+  const newComp = {id: uid(), name: name, teamIds: []};
+  competitions[catId].push(newComp);
+  selectedCompId[catId] = newComp.id;
   input.value = '';
   saveCompetitions();
-  renderCompTab(catId);
+  renderCompList(catId);
+  renderCompEditor(catId);
 }
 document.getElementById('btn-add-comp-sub20').onclick = () => addCompetition('sub20');
 document.getElementById('btn-add-comp-sub17').onclick = () => addCompetition('sub17');
 document.getElementById('in-comp-sub20').onkeydown = (e) => { if(e.key === 'Enter') addCompetition('sub20'); };
 document.getElementById('in-comp-sub17').onkeydown = (e) => { if(e.key === 'Enter') addCompetition('sub17'); };
 
-function renderCompTab(catId){
-  const listEl = document.getElementById('comp-list-' + catId);
+function renderCompList(catId){
+  const listEl = document.getElementById('complist-' + catId);
   if(!listEl) return;
   listEl.innerHTML = '';
   const comps = competitions[catId] || [];
+
   if(comps.length === 0){
     const empty = document.createElement('div');
-    empty.className = 'empty';
-    empty.textContent = 'Nenhuma competição cadastrada ainda.';
+    empty.style.cssText = 'padding:16px 12px;font-size:12px;color:var(--ink-muted);text-align:center;';
+    empty.textContent = 'Nenhuma competição ainda.';
     listEl.appendChild(empty);
     return;
   }
+
+  if(!selectedCompId[catId] || !comps.some(c => c.id === selectedCompId[catId])){
+    selectedCompId[catId] = comps[0].id;
+  }
+
   comps.forEach(comp => {
-    const box = document.createElement('div');
-    box.className = 'comp-box';
+    const item = document.createElement('div');
+    item.className = 'side-list-item' + (comp.id === selectedCompId[catId] ? ' active' : '');
+    const count = (comp.teamIds || []).length;
+    item.innerHTML = '<span class="name">' + escapeHtml(comp.name) + '</span><span class="sub">' + count + ' time' + (count === 1 ? '' : 's') + '</span>';
+    item.onclick = () => { selectedCompId[catId] = comp.id; renderCompList(catId); renderCompEditor(catId); };
+    listEl.appendChild(item);
+  });
+}
 
-    const head = document.createElement('div');
-    head.className = 'comp-head';
-    const nameInput = document.createElement('input');
-    nameInput.className = 'comp-name-input';
-    nameInput.value = comp.name;
-    nameInput.oninput = () => { comp.name = nameInput.value; };
-    nameInput.onblur = () => { saveCompetitions(); };
-    const delBtn = document.createElement('button');
-    delBtn.className = 'remove';
-    delBtn.innerHTML = '&times;';
-    delBtn.title = 'Remover competição';
-    delBtn.onclick = () => {
-      confirmModal('Remover a competição "' + comp.name + '"?', () => {
-        competitions[catId] = competitions[catId].filter(c => c.id !== comp.id);
-        saveCompetitions();
-        renderCompTab(catId);
-      });
-    };
-    head.appendChild(nameInput);
-    head.appendChild(delBtn);
-    box.appendChild(head);
+function renderCompEditor(catId){
+  const editor = document.getElementById('compeditor-' + catId);
+  if(!editor) return;
+  editor.innerHTML = '';
 
-    const teamsWrap = document.createElement('div');
-    teamsWrap.className = 'comp-teams';
+  const comps = competitions[catId] || [];
+  const comp = comps.find(c => c.id === selectedCompId[catId]);
+  if(!comp){
+    editor.innerHTML = '<div class="side-editor-empty">Crie uma competição à esquerda para começar.</div>';
+    return;
+  }
+
+  const head = document.createElement('div');
+  head.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:14px;';
+  const nameInput = document.createElement('input');
+  nameInput.className = 'team-name';
+  nameInput.style.fontSize = '17px';
+  nameInput.value = comp.name;
+  nameInput.oninput = () => { comp.name = nameInput.value; };
+  nameInput.onblur = () => { saveCompetitions(); renderCompList(catId); };
+  const delBtn = document.createElement('button');
+  delBtn.className = 'remove';
+  delBtn.innerHTML = '&times;';
+  delBtn.title = 'Remover competição';
+  delBtn.onclick = () => {
+    confirmModal('Remover a competição "' + comp.name + '"?', () => {
+      competitions[catId] = competitions[catId].filter(c => c.id !== comp.id);
+      selectedCompId[catId] = null;
+      saveCompetitions();
+      renderCompList(catId);
+      renderCompEditor(catId);
+      renderMapa();
+    });
+  };
+  head.appendChild(nameInput);
+  head.appendChild(delBtn);
+  editor.appendChild(head);
+
+  const searchInput = document.createElement('input');
+  searchInput.className = 'coach-input';
+  searchInput.placeholder = 'Buscar time...';
+  searchInput.value = compSearch[catId];
+  searchInput.oninput = () => { compSearch[catId] = searchInput.value; renderPills(); };
+  editor.appendChild(searchInput);
+
+  const label = document.createElement('div');
+  label.className = 'cat-label';
+  label.style.marginTop = '12px';
+  label.textContent = 'Times participantes';
+  editor.appendChild(label);
+
+  const pillsWrap = document.createElement('div');
+  pillsWrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px;';
+  editor.appendChild(pillsWrap);
+
+  function renderPills(){
+    pillsWrap.innerHTML = '';
     if(board.length === 0){
       const none = document.createElement('div');
       none.style.cssText = 'font-size:12px;color:var(--ink-muted);';
       none.textContent = 'Cadastre times na aba Times primeiro.';
-      teamsWrap.appendChild(none);
+      pillsWrap.appendChild(none);
+      return;
     }
-    board.forEach(entry => {
-      const label = document.createElement('label');
-      label.className = 'comp-team-check';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = (comp.teamIds || []).includes(entry.id);
-      checkbox.onchange = () => {
+    const query = compSearch[catId].trim().toLowerCase();
+    const sortedTeams = [...board].sort((a, b) => a.team.localeCompare(b.team, 'pt-BR', {sensitivity:'base'}));
+    const filtered = query ? sortedTeams.filter(e => e.team.toLowerCase().includes(query)) : sortedTeams;
+
+    if(filtered.length === 0){
+      const none = document.createElement('div');
+      none.style.cssText = 'font-size:12px;color:var(--ink-muted);';
+      none.textContent = 'Nenhum time encontrado.';
+      pillsWrap.appendChild(none);
+      return;
+    }
+
+    filtered.forEach(entry => {
+      const isOn = (comp.teamIds || []).includes(entry.id);
+      const pill = document.createElement('div');
+      pill.className = 'pill ' + (isOn ? 'on' : 'off');
+      pill.innerHTML = isOn
+        ? escapeHtml(entry.team) + ' <span class="x">&times;</span>'
+        : '+ ' + escapeHtml(entry.team);
+      pill.onclick = () => {
         if(!comp.teamIds) comp.teamIds = [];
-        if(checkbox.checked){
-          if(!comp.teamIds.includes(entry.id)) comp.teamIds.push(entry.id);
-        }else{
+        if(isOn){
           comp.teamIds = comp.teamIds.filter(id => id !== entry.id);
+        }else{
+          comp.teamIds.push(entry.id);
         }
+        renderPills();
+        renderCompList(catId);
         renderMapa();
         scheduleSaveCompetitions();
       };
-      label.appendChild(checkbox);
-      const span = document.createElement('span');
-      span.textContent = entry.team;
-      label.appendChild(span);
-      teamsWrap.appendChild(label);
+      pillsWrap.appendChild(pill);
     });
-    box.appendChild(teamsWrap);
-    listEl.appendChild(box);
-  });
+  }
+  renderPills();
 }
 
 /* ================= MAPA GERAL TAB ================= */
 function renderMapa(){
-  const mapGrid = document.getElementById('map-grid');
+  const rowsWrap = document.getElementById('mapa-rows');
   const emptyMapa = document.getElementById('empty-mapa');
-  mapGrid.innerHTML = '';
-  emptyMapa.style.display = board.length === 0 ? 'block' : 'none';
+  const tableEl = document.getElementById('mapa-table');
+  rowsWrap.innerHTML = '';
+  const hasTeams = board.length > 0;
+  emptyMapa.style.display = hasTeams ? 'none' : 'block';
+  tableEl.style.display = hasTeams ? 'block' : 'none';
+  if(!hasTeams) return;
 
   const sortedBoard = [...board].sort((a, b) => a.team.localeCompare(b.team, 'pt-BR', {sensitivity:'base'}));
 
   sortedBoard.forEach(entry => {
-    const tile = document.createElement('div');
-    tile.className = 'map-tile';
+    const row = document.createElement('div');
+    row.className = 'mapa-row';
+
+    const main = document.createElement('div');
+    main.className = 'mapa-row-main';
 
     const emblem = document.createElement('div');
     emblem.className = 'emblem';
+    emblem.style.width = '26px';
+    emblem.style.height = '26px';
+    emblem.style.fontSize = '10px';
     emblem.innerHTML = crestHtml(entry);
-    tile.appendChild(emblem);
+    main.appendChild(emblem);
 
-    const info = document.createElement('div');
-    info.className = 'map-info';
-    const teamName = document.createElement('div');
-    teamName.className = 'map-team';
-    teamName.textContent = entry.team;
-    info.appendChild(teamName);
-
-    if(entry.notes){
-      const noteDiv = document.createElement('div');
-      noteDiv.className = 'map-note';
-      noteDiv.textContent = entry.notes;
-      info.appendChild(noteDiv);
-    }
+    const nameCell = document.createElement('div');
+    nameCell.className = 'mapa-cell';
+    nameCell.innerHTML = '<span style="color:var(--ink);">' + escapeHtml(entry.team) + '</span>';
+    main.appendChild(nameCell);
 
     CATS.forEach(cat => {
       const catData = entry.categories[cat.id];
-      const row = document.createElement('div');
-      row.className = 'map-row';
-      let html = '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span><span><b>' + cat.label + ':</b> ' + escapeHtml(catData.coach || 'sem técnico');
+      const cell = document.createElement('div');
+      cell.className = 'mapa-cell';
+      let html = '<span class="dot" style="background:' + statusColorVar(catData.status) + '"></span><span class="coach-name">' + escapeHtml(catData.coach || 'sem técnico');
       if(cat.tournament){
         const tournamentText = competitionsForTeam(cat.id, entry.id);
         if(tournamentText){
@@ -962,12 +1087,20 @@ function renderMapa(){
         }
       }
       html += '</span>';
-      row.innerHTML = html;
-      info.appendChild(row);
+      cell.innerHTML = html;
+      main.appendChild(cell);
     });
 
-    tile.appendChild(info);
-    mapGrid.appendChild(tile);
+    row.appendChild(main);
+
+    if(entry.notes){
+      const noteRow = document.createElement('div');
+      noteRow.className = 'mapa-note-row';
+      noteRow.textContent = entry.notes;
+      row.appendChild(noteRow);
+    }
+
+    rowsWrap.appendChild(row);
   });
 }
 
